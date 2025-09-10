@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- Flaticon UIcons CSS -->
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .dashboard-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+      color: white;
+      position: relative;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 32px;
+    }
+
+    .sidebar-logo {
+      width: 160px;
+      height: 160px;
+      margin-bottom: 48px;
+    }
+
+    .sidebar-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .nav-menu {
+      list-style: none;
+      width: 100%;
+      padding: 0 24px;
+      flex: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-icon {
+      margin-right: 16px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* User Profile */
+    .user-profile {
+      width: 100%;
+      padding: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      margin-top: auto;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .user-avatar-wrapper {
+      position: relative;
+      width: 60px;
+      height: 60px;
+    }
+
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      min-width: 60px;
+      min-height: 60px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: font-size 0.2s;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .user-avatar-wrapper input[type=file] {
+      display: none;
+    }
+
+    .avatar-pen {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      background: #dc2626;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-size: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: left;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-role {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .user-actions {
+      list-style: none;
+      width: 100%;
+      margin-top: 16px;
+      padding: 0 24px;
+    }
+
+    .user-actions .nav-item {
+      justify-content: flex-start;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 48px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      overflow: auto;
+    }
+
+    .section {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Settings Container */
+    .settings-container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 500;
+    }
+
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ccc;
+      border-radius: 34px;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 2px;
+      bottom: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: .4s;
+    }
+
+    input:checked+.slider {
+      background: #dc2626;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-content h3 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .modal-content p {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-cancel {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .btn-cancel:hover {
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+
+    .btn-confirm {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-confirm:hover {
+      background: #b91c1c;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .loading {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Dark mode */
+    body.dark {
+      background: #0f172a;
+    }
+
+    body.dark .sidebar {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    body.dark .main-content {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    body.dark .user-name,
+    body.dark .user-role {
+      color: white;
+    }
+
+    body.dark .settings-container {
+      background: #1e293b;
+      color: white;
+    }
+
+    body.dark .settings-item {
+      border-color: #334155;
+    }
+
+    body.dark .modal-content {
+      background: #1e293b;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <img src="logo.png" alt="Logo">
+      </div>
+
+      <!-- Navigation -->
+      <ul class="nav-menu">
+        <li class="nav-item active" data-section="dashboard">
+          <span class="nav-icon"><i class="fi fi-sr-chart-histogram"></i></span>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-section="riders">
+          <span class="nav-icon"><i class="fi fi-sr-motorcycle"></i></span>
+          <span>Rider Management</span>
+        </li>
+        <li class="nav-item" data-section="reports">
+          <span class="nav-icon"><i class="fi fi-sr-document"></i></span>
+          <span>Generate Reports</span>
+        </li>
+      </ul>
+
+
+      <!-- User -->
+      <div class="user-profile">
+        <div class="user-info">
+          <div class="user-avatar-wrapper">
+            <div class="user-avatar" id="userAvatar"></div>
+            <label class="avatar-pen" for="avatarInput"><i class="fi fi-rr-pencil"></i></label>
+            <input type="file" id="avatarInput" accept="image/*">
+          </div>
+          <div class="user-details">
+            <div class="user-name" id="userName"></div>
+            <div class="user-role">Administrator</div>
+          </div>
+        </div>
+
+        <ul class="user-actions">
+          <li class="nav-item" data-section="settings">
+            <span class="nav-icon"><i class="fi fi-sr-settings"></i></span>
+            <span>Settings</span>
+          </li>
+          <li class="nav-item" id="logoutBtn">
+            <span class="nav-icon"><i class="fi fi-sr-sign-out-alt"></i></span>
+            <span>Log out</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="section active" id="dashboardPage"></div>
+      <div class="section" id="ridersPage"></div>
+      <div class="section" id="reportsPage"></div>
+      <div class="section" id="settingsPage">
+        <div class="settings-container">
+          <div class="settings-item">
+            <span>Dark Mode</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="darkToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <!-- Future settings can be added here -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Logout Modal -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-content">
+      <h3>Confirm Logout</h3>
+      <p>Are you sure you want to log out of your session?</p>
+      <div class="modal-buttons">
+        <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn btn-confirm" id="confirmLogoutBtn">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://szbeeamuqnlepnnquwdg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YmVlYW11cW5sZXBubnF1d2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjI5MzIsImV4cCI6MjA3MTIzODkzMn0.rvgtr4rk1sGq55-j4x0oOHZ-H9e5vSpBopnqxZTs6ps';
+    let supabaseClient;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        await loadUser();
+      }
+      setupEvents();
+      setupDarkToggle();
+      setupAvatarUpload();
+    });
+
+    async function loadUser() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return;
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user && user.email) displayUser(user.email);
+      } catch (e) { console.error(e); }
+    }
+
+    function displayUser(email) {
+      const avatar = document.getElementById('userAvatar');
+      const nameParts = email.split(/[@._-]/);
+      let initials = '';
+      if (nameParts.length >= 2) {
+        initials = nameParts[0][0] + nameParts[1][0];
+      } else {
+        initials = email[0];
+      }
+      avatar.textContent = initials.toUpperCase();
+      avatar.style.backgroundImage = '';
+      if (initials.length === 1) avatar.style.fontSize = '28px';
+      else if (initials.length === 2) avatar.style.fontSize = '24px';
+      else avatar.style.fontSize = '20px';
+      document.getElementById('userName').textContent = email;
+    }
+
+    function setupEvents() {
+      document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item[data-section]').forEach(n => n.classList.remove('active'));
+          item.classList.add('active');
+
+          const section = item.getAttribute('data-section');
+          document.getElementById('dashboardPage').classList.toggle('active', section === 'dashboard');
+          document.getElementById('ridersPage').classList.toggle('active', section === 'riders');
+          document.getElementById('reportsPage').classList.toggle('active', section === 'reports');
+          document.getElementById('settingsPage').classList.toggle('active', section === 'settings');
+        });
+      });
+
+      const logoutBtn = document.getElementById('logoutBtn');
+      const logoutModal = document.getElementById('logoutModal');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const confirmBtn = document.getElementById('confirmLogoutBtn');
+
+      logoutBtn.addEventListener('click', () => logoutModal.classList.add('show'));
+      cancelBtn.addEventListener('click', () => logoutModal.classList.remove('show'));
+      confirmBtn.addEventListener('click', handleLogout);
+      logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) logoutModal.classList.remove('show'); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') logoutModal.classList.remove('show'); });
+    }
+
+    async function handleLogout() {
+      const confirmBtn = document.getElementById('confirmLogoutBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<div class="loading" style="width:16px;height:16px;margin:0 auto;"></div>';
+      await new Promise(r => setTimeout(r, 1000));
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    function setupDarkToggle() {
+      const toggle = document.getElementById('darkToggle');
+      toggle.addEventListener('change', () => {
+        document.body.classList.toggle('dark', toggle.checked);
+      });
+    }
+
+    function setupAvatarUpload() {
+      const input = document.getElementById('avatarInput');
+      const avatar = document.getElementById('userAvatar');
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          avatar.style.backgroundImage = `url('${reader.result}')`;
+          avatar.style.backgroundSize = 'cover';
+          avatar.style.backgroundPosition = 'center';
+          avatar.textContent = '';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  </script>
+
+</body>
+
+</html>

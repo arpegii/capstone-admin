@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AVOID - Admin Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #b91c1c;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo-section {
+      margin-bottom: 50px;
+    }
+
+    .logo-placeholder {
+      width: 300px;
+      height: 300px;
+      display: inline-block;
+    }
+
+    .subtitle {
+      color: white;
+      font-size: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      color: white;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #000;
+      border-radius: 25px;
+      font-size: 16px;
+      background: white;
+      outline: none;
+    }
+
+    .form-input::placeholder {
+      color: #999;
+    }
+
+    .forgot-password {
+      text-align: right;
+      margin-bottom: 30px;
+    }
+
+    .forgot-password a {
+      color: white;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .login-btn {
+      background: white;
+      color: #333;
+      border: 1px solid #000;
+      border-radius: 25px;
+      padding: 12px 40px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #forgot-resend {
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-block;
+      color: #1d4ed8;
+      text-decoration: underline;
+      margin-top: 12px;
+    }
+
+    #forgot-resend.disabled {
+      color: #9ca3af;
+      text-decoration: none;
+      cursor: default;
+    }
+
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .otp-modal,
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 30px 24px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .otp-title,
+    .modal-title {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 16px;
+      font-weight: bold;
+    }
+
+    .otp-message,
+    .modal-message {
+      font-size: 15px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .otp-input-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .otp-input-box {
+      width: 48px;
+      height: 56px;
+      text-align: center;
+      font-size: 24px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .otp-input-box:focus {
+      border-color: #22c55e;
+    }
+
+    .otp-resend,
+    .forgot-resend {
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-block;
+      margin-top: 12px;
+    }
+
+    .otp-resend.active,
+    .forgot-resend.active {
+      color: #1d4ed8;
+      text-decoration: underline;
+    }
+
+    .otp-resend.disabled,
+    .forgot-resend.disabled {
+      color: #9ca3af;
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .modal-button,
+    .modal-button.otp-verify {
+      width: 100%;
+      background: #22c55e;
+      color: white;
+      border-radius: 8px;
+      padding: 12px 0;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .modal-button:hover,
+    .modal-button.otp-verify:hover {
+      background: #16a34a;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .modal-button.cancel {
+      background: #b91c1c;
+      margin-top: 10px;
+    }
+
+    .modal-button.cancel:hover {
+      background: #991b1b;
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+    }
+
+    .modal-icon.error {
+      background: #b91c1c;
+    }
+
+    .modal-icon::after {
+      content: "✓";
+      color: white;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    .modal-icon.error::after {
+      content: "✗";
+    }
+/* Forgot Password Resend Link */
+#forgot-resend {
+  font-size: 13px;
+  cursor: pointer;
+  color: #1d4ed8;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+#forgot-resend.disabled {
+  color: #9ca3af;
+  text-decoration: none;
+  cursor: default;
+}
+
+
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="logo-section">
+      <div class="logo"><img src="logo.png" alt="Logo" class="logo-placeholder"></div>
+      <div class="subtitle">Admin Login</div>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username" class="form-label">Email</label>
+        <input id="username" type="email" class="form-input" placeholder="Enter Your Email" required>
+      </div>
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input id="password" type="password" class="form-input" placeholder="Enter Your Password" required>
+      </div>
+      <div class="forgot-password"><a id="forgot-link">Forgot Password?</a></div>
+      <button type="submit" class="login-btn" id="login-btn">Login</button>
+    </form>
+  </div>
+
+  <!-- OTP Modal -->
+  <div class="modal-overlay" id="otp-overlay">
+    <div class="otp-modal">
+      <div class="otp-title">Enter OTP</div>
+      <div class="otp-message">We sent a 6-digit code to your email</div>
+      <div class="otp-input-container">
+        <input type="text" maxlength="1" class="otp-input-box">
+        <input type="text" maxlength="1" class="otp-input-box">
+        <input type="text" maxlength="1" class="otp-input-box">
+        <input type="text" maxlength="1" class="otp-input-box">
+        <input type="text" maxlength="1" class="otp-input-box">
+        <input type="text" maxlength="1" class="otp-input-box">
+      </div>
+      <button class="modal-button otp-verify" id="verify-otp">Verify OTP</button>
+      <div class="otp-resend active" id="resend-otp">Didn't receive code? <span id="resend-timer"></span></div>
+    </div>
+  </div>
+
+  <!-- OTP Success Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon"></div>
+      <div class="modal-title" id="modal-title">Success!</div>
+      <div class="modal-message" id="modal-message">OTP verified. Redirecting...</div>
+      <button class="modal-button" id="modal-button" onclick="closeModal()">Continue</button>
+    </div>
+  </div>
+
+  <!-- OTP Error Modal -->
+  <div class="modal-overlay" id="otp-error-overlay">
+    <div class="modal">
+      <div class="modal-icon error"></div>
+      <div class="modal-title">Error</div>
+      <div class="modal-message" id="otp-error-message">Invalid or expired OTP. Please try again.</div>
+      <button class="modal-button" onclick="closeOtpError()">OK</button>
+    </div>
+  </div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-overlay" id="forgot-overlay">
+  <div class="modal">
+    <div class="modal-title">Reset Password</div>
+    <div class="modal-message">Enter your email to receive a password reset link.</div>
+    
+    <!-- Email Input -->
+    <input type="email" id="forgot-email" class="modal-input" placeholder="Enter your email">
+    
+    <!-- Submit & Cancel Buttons -->
+    <button class="modal-button" id="forgot-submit" style="margin-top:10px;">Send Reset Link</button>
+    <button class="modal-button cancel" onclick="closeForgotModal()">Cancel</button>
+  </div>
+</div>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://szbeeamuqnlepnnquwdg.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YmVlYW11cW5sZXBubnF1d2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NjI5MzIsImV4cCI6MjA3MTIzODkzMn0.rvgtr4rk1sGq55-j4x0oOHZ-H9e5vSpBopnqxZTs6ps";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const otpOverlay = document.getElementById("otp-overlay");
+    const otpInputs = document.querySelectorAll(".otp-input-box");
+    const resendBtn = document.getElementById("resend-otp");
+    const resendTimerSpan = document.getElementById("resend-timer");
+
+    const forgotOverlay = document.getElementById("forgot-overlay");
+    const forgotEmailInput = document.getElementById("forgot-email");
+    const forgotResend = document.getElementById("forgot-resend");
+    const forgotTimerSpan = document.getElementById("forgot-timer");
+    const forgotSuccessOverlay = document.getElementById("forgot-success-overlay");
+    const forgotSuccessBtn = document.getElementById("forgot-success-btn");
+
+    const otpErrorOverlay = document.getElementById("otp-error-overlay");
+    const otpErrorMessage = document.getElementById("otp-error-message");
+
+    // --- LOGIN / OTP ---
+    document.getElementById("login-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const email = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("login-btn");
+      btn.disabled = true; btn.textContent = "Verifying...";
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { btn.disabled = false; btn.textContent = "Login"; return showOtpError(error.message); }
+        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+        btn.disabled = false; btn.textContent = "Login";
+        showOtpModal();
+      } catch (err) { btn.disabled = false; btn.textContent = "Login"; showOtpError("Login error"); }
+    });
+
+    function showOtpModal() {
+      otpInputs.forEach(i => i.value = "");
+      otpOverlay.classList.add("show");
+      otpInputs[0].focus();
+    }
+    function hideOtpModal() { otpOverlay.classList.remove("show"); }
+
+    otpInputs.forEach((input, i) => {
+      input.addEventListener("input", () => { if (input.value.length === 1 && i < otpInputs.length - 1) otpInputs[i + 1].focus(); });
+      input.addEventListener("keydown", e => { if (e.key === "Backspace" && !input.value && i > 0) otpInputs[i - 1].focus(); });
+    });
+
+    function setResendActive(active) {
+      if (active) { resendBtn.classList.add("active"); resendBtn.classList.remove("disabled"); resendTimerSpan.textContent = ""; }
+      else { resendBtn.classList.remove("active"); resendBtn.classList.add("disabled"); }
+    }
+
+    let cooldown = 30, timerInterval;
+    resendBtn.addEventListener("click", async () => {
+      if (resendBtn.classList.contains("disabled")) return;
+      const email = document.getElementById("username").value.trim();
+      if (!email) return alert("Enter your email first.");
+      try { await supabaseClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false } }); startCooldown(); }
+      catch (err) { console.error(err); showOtpError("Failed to resend OTP"); }
+    });
+
+    function startCooldown() {
+      setResendActive(false); resendTimerSpan.textContent = `(${cooldown}s)`;
+      timerInterval = setInterval(() => {
+        cooldown--; resendTimerSpan.textContent = `(${cooldown}s)`;
+        if (cooldown <= 0) { clearInterval(timerInterval); cooldown = 30; setResendActive(true); }
+      }, 1000);
+    }
+
+    document.getElementById("verify-otp").addEventListener("click", async () => {
+      const email = document.getElementById("username").value.trim();
+      const token = Array.from(otpInputs).map(i => i.value).join('');
+      if (token.length < 6) return showOtpError("Enter the 6-digit OTP");
+      try {
+        const { data, error } = await supabaseClient.auth.verifyOtp({ email, token, type: 'email' });
+        if (error) return showOtpError(error.message);
+        hideOtpModal(); showModal("OTP Verified", "OTP verified successfully!");
+        setTimeout(closeModal, 3000);
+      } catch (err) { showOtpError("Verification error"); }
+    });
+
+    function showModal(title, message) {
+      document.getElementById("modal-title").textContent = title;
+      document.getElementById("modal-message").textContent = message;
+      document.getElementById("modal-overlay").classList.add("show");
+    }
+    function closeModal() { document.getElementById("modal-overlay").classList.remove("show"); window.location.href = "dashboard.html"; }
+
+    function showOtpError(message) {
+      otpErrorMessage.textContent = message;
+      otpErrorOverlay.classList.add("show");
+    }
+    function closeOtpError() { otpErrorOverlay.classList.remove("show"); }
+
+    otpOverlay.addEventListener("click", e => { if (e.target === otpOverlay) hideOtpModal(); });
+    otpErrorOverlay.addEventListener("click", e => { if (e.target === otpErrorOverlay) closeOtpError(); });
+
+// --- FORGOT PASSWORD ---
+document.getElementById("forgot-link").addEventListener("click", () => {
+  forgotEmailInput.value = document.getElementById("username").value.trim();
+  forgotOverlay.classList.add("show");
+});
+
+function closeForgotModal() {
+  forgotOverlay.classList.remove("show");
+}
+
+// Submit Forgot Password
+document.getElementById("forgot-submit").addEventListener("click", async () => {
+  const email = forgotEmailInput.value.trim();
+  if (!email) {
+    otpErrorMessage.textContent = "Please enter your email";
+    otpErrorOverlay.classList.add("show");
+    return;
+  }
+
+  try {
+    await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/reset-password.html"
+    });
+    forgotOverlay.classList.remove("show");
+    forgotSuccessOverlay.classList.add("show");
+  } catch (err) {
+    console.error(err);
+    otpErrorMessage.textContent = err.message || "Failed to send reset link";
+    otpErrorOverlay.classList.add("show");
+  }
+});
+
+// Close Success Modal
+forgotSuccessBtn.addEventListener("click", () => {
+  forgotSuccessOverlay.classList.remove("show");
+});
+
+forgotOverlay.addEventListener("click", e => {
+  if (e.target === forgotOverlay) closeForgotModal();
+});
+
+
+  </script>
+</body>
+
+</html>
