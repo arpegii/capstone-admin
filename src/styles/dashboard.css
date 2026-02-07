@@ -1,0 +1,222 @@
+:root {
+  --primary: #ff0000;
+  --success: #22c55e;
+  --warning: #f59e42;
+  --danger: #ff0000;
+  --background: #f8fafc;
+  --card: #fff;
+  --muted: #8593a3;
+}
+
+/* ================= DASHBOARD ONLY ================= */
+.dashboard-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  min-height: 100vh;
+  background: #fff;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+}
+
+.dashboard-page .dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.dashboard-page .date-range {
+  background: var(--primary);
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dashboard-page .dash-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.dashboard-page .dash-grid.two-rows {
+  grid-template-rows: auto auto;
+}
+
+.dashboard-page .dash-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 1.2rem 1rem;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.14s, box-shadow 0.15s;
+  min-height: 120px;
+  color: #000;
+}
+
+.dashboard-page .dash-card .card-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #000;
+  margin-bottom: 0.3rem;
+}
+
+.dashboard-page .dash-card .card-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #000;
+}
+
+.dashboard-page .dash-card .card-desc {
+  font-size: 0.9rem;
+  color: #000;
+}
+
+.dashboard-page .dash-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-page .top-card {
+  min-height: 150px;
+}
+
+.dashboard-page .bottom-card {
+  min-height: 140px;
+}
+
+.dashboard-page .bottom-card.small-card {
+  min-height: 140px;
+}
+
+.dashboard-page .card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.dashboard-page .card-icon.success {
+  background: #eafaf3;
+  color: var(--success);
+}
+
+.dashboard-page .card-icon.warning {
+  background: #ffeaea;
+  color: var(--danger);
+}
+
+.dashboard-page .quota-progress {
+  display: grid;
+  place-items: center;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-page .quota-ring {
+  width: 60px;
+  height: 60px;
+}
+
+.dashboard-page .quota-ring-bg {
+  stroke: #eee;
+  stroke-width: 8;
+  fill: none;
+}
+
+.dashboard-page .quota-ring-fg {
+  stroke: var(--primary);
+  stroke-width: 8;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s;
+}
+
+.dashboard-page .quota-ring-label {
+  position: absolute;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.dashboard-page .modern-riders-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+}
+
+.dashboard-page .modern-riders-list li {
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 0.3rem;
+  background: #ffeaea;
+  color: var(--danger);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.dashboard-page .growth {
+  min-height: 180px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-page .dash-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-page .dash-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 1rem;
+  }
+
+  .dashboard-page .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================= DARK MODE (Dashboard only) ================= */
+body.dark .dashboard-page {
+  background: var(--dm-bg);
+}
+
+body.dark .dashboard-page .dash-card {
+  background: var(--dm-surface);
+  box-shadow: var(--dm-shadow);
+}
+
+body.dark .dashboard-page .dash-card .card-label,
+body.dark .dashboard-page .dash-card .card-value,
+body.dark .dashboard-page .dash-card .card-desc,
+body.dark .dashboard-page .quota-ring-label {
+  color: var(--dm-text);
+}
+
+body.dark .dashboard-page .quota-ring-bg {
+  stroke: var(--dm-border);
+}
+
+body.dark .dashboard-page .modern-riders-list li {
+  background: rgba(255, 0, 0, 0.16);
+  color: #fecaca;
+}
