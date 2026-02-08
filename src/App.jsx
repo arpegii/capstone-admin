@@ -8,7 +8,6 @@ import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Riders from "./pages/riders";
 import Parcels from "./pages/Parcels";
-import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Profile from "./pages/profile";
 
@@ -75,7 +74,6 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/riders" element={<ProtectedRoute><Riders /></ProtectedRoute>} />
       <Route path="/parcels" element={<ProtectedRoute><Parcels /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />

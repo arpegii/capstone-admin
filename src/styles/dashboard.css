@@ -35,6 +35,30 @@
   margin-bottom: 1.4rem;
 }
 
+.dashboard-page .dash-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.dashboard-page .dash-generate-report-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(185, 28, 28, 0.25);
+}
+
+.dashboard-page .dash-generate-report-btn:hover {
+  filter: brightness(1.03);
+}
+
 .dashboard-page .dash-header-copy {
   display: block;
 }
@@ -269,6 +293,346 @@
   border-radius: 16px;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
   overflow: hidden;
+}
+
+.dashboard-report-modal {
+  width: min(760px, 96vw);
+  max-height: min(90vh, 840px);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.dashboard-report-modal-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+}
+
+.dashboard-report-modal-header h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.dashboard-report-modal-body {
+  padding: 18px 18px 20px;
+  min-height: 0;
+  display: flex;
+  overflow: auto;
+}
+
+.dashboard-report-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  gap: 14px;
+}
+
+.dashboard-report-main {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.dashboard-report-date-header {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-report-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-report-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard-report-field.full {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-report-field label {
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-report-field select,
+.dashboard-report-field input[type="date"] {
+  min-height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.dashboard-report-field select:focus,
+.dashboard-report-field input[type="date"]:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+.dashboard-report-actions-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-top: 2px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-report-send-btn,
+.dashboard-report-download-btn {
+  border: none;
+  border-radius: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+}
+
+.dashboard-report-send-btn svg,
+.dashboard-report-download-btn svg {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+}
+
+.dashboard-report-download-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.dashboard-report-send-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.dashboard-report-send-btn:hover,
+.dashboard-report-download-btn:hover {
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(185, 28, 28, 0.2);
+}
+
+.dashboard-send-modal {
+  width: min(480px, 94vw);
+}
+
+.dashboard-send-modal-header {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+  text-align: center;
+}
+
+.dashboard-send-modal-header h2 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.dashboard-send-modal-body {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-send-field {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-send-field label {
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-send-field input {
+  min-height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.dashboard-send-field input:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+.dashboard-send-field small {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.dashboard-send-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dashboard-send-cancel-btn,
+.dashboard-send-confirm-btn {
+  border: none;
+  border-radius: 12px;
+  min-height: 42px;
+  padding: 10px 16px;
+  font-size: 0.83rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+}
+
+.dashboard-send-confirm-btn svg {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+}
+
+.dashboard-send-cancel-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.dashboard-send-confirm-btn {
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+}
+
+.dashboard-send-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dashboard-report-send-btn:disabled,
+.dashboard-report-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dashboard-report-validation {
+  width: min(400px, 90vw);
+  max-width: 90%;
+  padding: 40px 32px;
+  text-align: center;
+  display: grid;
+  gap: 14px;
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: dashboardModalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+@keyframes dashboardModalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dashboard-report-validation::before {
+  content: '\26A0';
+  font-size: 56px;
+  display: block;
+  margin-bottom: 6px;
+  color: #ff0000;
+}
+
+.dashboard-report-validation p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dashboard-report-validation button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  width: fit-content;
+  justify-self: center;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
+}
+
+.dashboard-report-validation button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.dashboard-report-validation button:active {
+  transform: translateY(0);
 }
 
 .violation-full-map-modal {
@@ -507,6 +871,11 @@
     align-items: stretch;
   }
 
+  .dashboard-page .dash-header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
   .dashboard-page .date-range {
     width: fit-content;
   }
@@ -545,6 +914,20 @@
     flex-direction: column;
   }
 
+  .dashboard-report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-report-date-header,
+  .dashboard-report-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-report-actions-panel {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
   .violation-full-map-modal {
     width: 98vw;
     height: 88vh;
@@ -581,6 +964,10 @@ body.dark .dashboard-page .date-range {
   border-color: var(--dm-border);
 }
 
+body.dark .dashboard-page .dash-generate-report-btn {
+  box-shadow: 0 10px 22px rgba(127, 29, 29, 0.45);
+}
+
 body.dark .dashboard-page .metric-pill.success {
   color: #6ee7b7;
   background: rgba(16, 185, 129, 0.18);
@@ -615,6 +1002,73 @@ body.dark .dashboard-page .violation-map-size-btn,
 body.dark .violation-full-map-close {
   color: #e2e8f0;
   background: #334155;
+}
+
+body.dark .dashboard-report-modal {
+  background: var(--dm-surface);
+}
+
+body.dark .dashboard-report-field label {
+  color: var(--dm-muted);
+}
+
+body.dark .dashboard-report-field select,
+body.dark .dashboard-report-field input[type="date"] {
+  background: var(--dm-bg);
+  border-color: var(--dm-border);
+  color: var(--dm-text);
+}
+
+body.dark .dashboard-report-date-header,
+body.dark .dashboard-report-field.full,
+body.dark .dashboard-report-meta {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+}
+
+body.dark .dashboard-report-send-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+body.dark .dashboard-report-actions-panel {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+}
+
+body.dark .dashboard-send-modal {
+  background: var(--dm-surface);
+}
+
+body.dark .dashboard-send-field {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+}
+
+body.dark .dashboard-send-field label,
+body.dark .dashboard-send-field small {
+  color: var(--dm-muted);
+}
+
+body.dark .dashboard-send-field input {
+  background: var(--dm-bg);
+  border-color: var(--dm-border);
+  color: var(--dm-text);
+}
+
+body.dark .dashboard-send-cancel-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+body.dark .dashboard-report-validation {
+  background: var(--dm-surface);
+}
+
+body.dark .dashboard-report-validation p {
+  color: var(--dm-text);
 }
 
 body.dark .violation-full-map-body {

@@ -17,6 +17,57 @@ const humanizeLabel = (label) => {
     .join(" ");
 };
 
+const VIOLATION_PREVIEW_TEMPLATE = [
+  {
+    violation_type: "Overspeeding",
+    location: "Quezon Memorial Circle, Quezon City",
+    severity: "High",
+    created_at: "2026-01-12T09:40:00",
+  },
+  {
+    violation_type: "Route Deviation",
+    location: "Aurora Blvd, Cubao, Quezon City",
+    severity: "Medium",
+    created_at: "2026-01-15T14:18:00",
+  },
+  {
+    violation_type: "Long Idle Stop",
+    location: "Espana Blvd, Sampaloc, Manila",
+    severity: "Low",
+    created_at: "2026-01-17T11:25:00",
+  },
+  {
+    violation_type: "Harsh Braking",
+    location: "Ortigas Ave, Pasig City",
+    severity: "Medium",
+    created_at: "2026-01-19T16:02:00",
+  },
+  {
+    violation_type: "Overspeeding",
+    location: "Commonwealth Ave, Batasan Hills, Quezon City",
+    severity: "High",
+    created_at: "2026-01-20T08:51:00",
+  },
+];
+
+const buildViolationPreviewFromRiders = (riders = []) =>
+  VIOLATION_PREVIEW_TEMPLATE.map((item, index) => {
+    const rider = riders.length ? riders[index % riders.length] : null;
+    const fullName = [rider?.fname, rider?.lname].filter(Boolean).join(" ").trim();
+    return {
+      ...item,
+      rider_name: fullName || rider?.username || `Rider ${index + 1}`,
+    };
+  });
+
+const filterViolationsByDate = (items, startDate, endDate) =>
+  (items || []).filter((item) => {
+    const itemDate = new Date(item.created_at);
+    const afterStart = !startDate || itemDate >= new Date(`${startDate}T00:00:00`);
+    const beforeEnd = !endDate || itemDate <= new Date(`${endDate}T23:59:59`);
+    return afterStart && beforeEnd;
+  });
+
 // ================= COMPONENT =================
 const Reports = () => {
   const [reportType, setReportType] = useState("");
@@ -27,6 +78,9 @@ const Reports = () => {
   const [format, setFormat] = useState("pdf");
   const [showValidation, setShowValidation] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [parcelPreview, setParcelPreview] = useState([]);
+  const [riderPreview, setRiderPreview] = useState([]);
+  const [violationPreview, setViolationPreview] = useState(() => buildViolationPreviewFromRiders([]));
 
   const parcelColumns = [
     { value: "All", label: "All" },
@@ -41,13 +95,53 @@ const Reports = () => {
   const riderColumns = [
     { value: "All", label: "All" },
     { value: "email", label: "Email" },
-    { value: "type_of_user", label: "Type of user" },
+    { value: "status", label: "Status" },
     { value: "created_at", label: "Created at" },
   ];
+
+  const violationColumns = [
+    { value: "All", label: "All" },
+    { value: "rider_name", label: "Rider" },
+    { value: "violation_type", label: "Violation type" },
+    { value: "location", label: "Location" },
+    { value: "severity", label: "Severity" },
+    { value: "created_at", label: "Created at" },
+  ];
+
+  useEffect(() => {
+    async function loadPreviewData() {
+      try {
+        const [parcelsRes, ridersRes] = await Promise.all([
+          supabaseClient
+            .from("parcels")
+            .select("parcel_id, recipient_name, assigned_rider, status")
+            .order("parcel_id", { ascending: false })
+            .limit(7),
+          supabaseClient
+            .from("users")
+            .select("username, fname, lname, status, created_at")
+            .order("created_at", { ascending: false })
+            .limit(7),
+        ]);
+
+        if (!parcelsRes.error) setParcelPreview(parcelsRes.data || []);
+        if (!ridersRes.error) {
+          const ridersData = ridersRes.data || [];
+          setRiderPreview(ridersData);
+          setViolationPreview(buildViolationPreviewFromRiders(ridersData));
+        }
+      } catch (error) {
+        console.error("Failed to load report previews:", error);
+      }
+    }
+
+    loadPreviewData();
+  }, []);
 
   // ================= DYNAMIC COLUMNS =================
   useEffect(() => {
     if (reportType === "riders") setColumnsOptions(riderColumns);
+    else if (reportType === "violations") setColumnsOptions(violationColumns);
     else setColumnsOptions(parcelColumns);
     setColumn("All");
   }, [reportType]);
@@ -83,7 +177,14 @@ const Reports = () => {
         .order("username", { ascending: true });
       if (error) throw error;
       data = riders;
-      columns = column === "All" ? ["email", "type_of_user", "created_at"] : [column];
+      columns = column === "All" ? ["email", "status", "created_at"] : [column];
+
+    } else if (reportType === "violations") {
+      data = filterViolationsByDate(violationPreview, startDate, endDate);
+      columns =
+        column === "All"
+          ? ["rider_name", "violation_type", "location", "severity", "created_at"]
+          : [column];
 
     } else if (reportType === "overall") {
       let parcelQuery = supabaseClient.from("parcels").select("*").order("parcel_id", { ascending: true });
@@ -98,6 +199,7 @@ const Reports = () => {
       data = [
         { section: "Riders", data: ridersRes.data },
         { section: "Parcels", data: parcelsRes.data },
+        { section: "Violations", data: filterViolationsByDate(violationPreview, startDate, endDate) },
       ];
       columns = null;
     }
@@ -152,11 +254,15 @@ const Reports = () => {
           doc.setFontSize(12);
           doc.text(section.section, 10, yOffset);
           const head = section.section === "Riders"
-            ? ["Username", "Email", "Type Of User", "Created At"]
-            : ["Parcel ID", "Recipient Name", "Phone", "Address", "Rider", "Status", "Created At"];
+            ? ["Username", "Email", "Status", "Created At"]
+            : section.section === "Violations"
+              ? ["Rider", "Violation Type", "Location", "Severity", "Created At"]
+              : ["Parcel ID", "Recipient Name", "Phone", "Address", "Rider", "Status", "Created At"];
           const body = section.data.map(row => section.section === "Riders"
-            ? [row.username, row.email, row.type_of_user, row.created_at]
-            : [row.parcel_id, row.recipient_name, row.recipient_phone, row.address, row.assigned_rider, row.status, row.created_at]
+            ? [row.username, row.email, row.status, row.created_at]
+            : section.section === "Violations"
+              ? [row.rider_name, row.violation_type, row.location, row.severity, row.created_at]
+              : [row.parcel_id, row.recipient_name, row.recipient_phone, row.address, row.assigned_rider, row.status, row.created_at]
           );
           autoTable(doc, { startY: yOffset + 4, head: [head], body, styles: { fontSize: 9 } });
           yOffset = doc.lastAutoTable.finalY + 10;
@@ -190,7 +296,9 @@ const Reports = () => {
       data.forEach(section => {
         csv += `\n## ${section.section}\n`;
         const cols = section.section === "Riders"
-          ? ["username", "email", "type_of_user", "created_at"]
+          ? ["username", "email", "status", "created_at"]
+          : section.section === "Violations"
+            ? ["rider_name", "violation_type", "location", "severity", "created_at"]
           : column === "All"
             ? ["parcel_id", "recipient_name", "recipient_phone", "address", "assigned_rider", "status", "created_at"]
             : ["parcel_id", column];
@@ -202,7 +310,9 @@ const Reports = () => {
     } else {
       const reportCols = column === "All"
         ? reportType === "riders"
-          ? ["username", "email", "type_of_user", "created_at"]
+          ? ["username", "email", "status", "created_at"]
+          : reportType === "violations"
+            ? ["rider_name", "violation_type", "location", "severity", "created_at"]
           : ["parcel_id", "recipient_name", "recipient_phone", "address", "assigned_rider", "status", "created_at"]
         : [column];
       csv += reportCols.join(",") + "\n";
@@ -248,15 +358,70 @@ const Reports = () => {
       <Sidebar currentPage="reports.html" />
 
       <div className="reports-page">
-        <div className="reports-card reports-card-modern">
-          <div className="reports-header"><h1 className="reports-page-title">Generate Reports</h1></div>
-          <div className="reports-form">
+        <div className="reports-layout">
+          <div className="reports-card reports-preview-card">
+            <div className="reports-header"><h1 className="reports-page-title">Data Lists</h1></div>
+            <div className="reports-preview-body">
+              <section className="reports-preview-section">
+                <div className="reports-preview-section-head">
+                  <h2>Parcel List</h2>
+                  <span className="reports-preview-count">{parcelPreview.length}</span>
+                </div>
+                <ul>
+                  {parcelPreview.length ? parcelPreview.map((parcel) => (
+                    <li key={parcel.parcel_id}>
+                      <strong>#{parcel.parcel_id}</strong>
+                      <span>{parcel.recipient_name || "Unnamed recipient"}</span>
+                      <small>{parcel.assigned_rider || "Unassigned"} | {parcel.status || "Unknown"}</small>
+                    </li>
+                  )) : <li className="reports-preview-empty">No parcel data available.</li>}
+                </ul>
+              </section>
+
+              <section className="reports-preview-section">
+                <div className="reports-preview-section-head">
+                  <h2>Rider List</h2>
+                  <span className="reports-preview-count">{riderPreview.length}</span>
+                </div>
+                <ul>
+                  {riderPreview.length ? riderPreview.map((rider) => (
+                    <li key={rider.username}>
+                      <strong>{[rider.fname, rider.lname].filter(Boolean).join(" ").trim() || rider.username}</strong>
+                      <span>@{rider.username}</span>
+                      <small>{rider.status || "Unknown status"}</small>
+                    </li>
+                  )) : <li className="reports-preview-empty">No rider data available.</li>}
+                </ul>
+              </section>
+
+              <section className="reports-preview-section">
+                <div className="reports-preview-section-head">
+                  <h2>Violation List</h2>
+                  <span className="reports-preview-count">{violationPreview.length}</span>
+                </div>
+                <ul>
+                  {violationPreview.map((violation) => (
+                    <li key={`${violation.rider_name}-${violation.created_at}-${violation.violation_type}`}>
+                      <strong>{violation.rider_name}</strong>
+                      <span>{violation.violation_type}</span>
+                      <small>{violation.location} | {violation.severity}</small>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          </div>
+
+          <div className="reports-card reports-card-modern">
+            <div className="reports-header"><h1 className="reports-page-title">Generate Reports</h1></div>
+            <div className="reports-form">
             <div className="reports-form-row full">
               <label>Report Type</label>
               <select id="reportType" value={reportType} onChange={e => setReportType(e.target.value)}>
                 <option value="">-- Select Report Type --</option>
                 <option value="parcels">Parcels</option>
                 <option value="riders">Riders</option>
+                <option value="violations">Violations</option>
                 <option value="overall">Overall Reports</option>
               </select>
             </div>
@@ -302,6 +467,7 @@ const Reports = () => {
                   "Generate"
                 )}
               </button>
+            </div>
             </div>
           </div>
         </div>

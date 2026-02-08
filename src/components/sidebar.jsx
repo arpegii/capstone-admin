@@ -4,7 +4,6 @@ import {
   FaChartBar,
   FaMotorcycle,
   FaBox,
-  FaFileAlt,
   FaCog,
   FaSignOutAlt,
   FaPen,
@@ -125,7 +124,6 @@ export default function Sidebar() {
     { label: "Dashboard", href: "/dashboard", icon: <FaChartBar /> },
     { label: "Rider Management", href: "/riders", icon: <FaMotorcycle /> },
     { label: "Parcel Management", href: "/parcels", icon: <FaBox /> },
-    { label: "Generate Reports", href: "/reports", icon: <FaFileAlt /> },
   ];
 
   // Define logout handler separately for debugging
