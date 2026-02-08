@@ -153,24 +153,14 @@ export default function Sidebar() {
 
   return (
     <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={() => setIsCollapsed((prev) => !prev)}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <span className="sidebar-toggle-lines" aria-hidden="true">
-            <span className="sidebar-toggle-line" />
-            <span className="sidebar-toggle-line" />
-            <span className="sidebar-toggle-line" />
-          </span>
-        </button>
-      </div>
-      
-      <div className="sidebar-logo">
+      <button
+        type="button"
+        className="sidebar-logo sidebar-logo-toggle"
+        onClick={() => setIsCollapsed((prev) => !prev)}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
         <img src="/images/logo.png" alt="Logo" />
-      </div>
+      </button>
 
       {/* Main Navigation */}
       <ul className="nav-menu">

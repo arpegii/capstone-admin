@@ -1,222 +1,443 @@
 :root {
-  --primary: #ff0000;
-  --success: #22c55e;
-  --warning: #f59e42;
-  --danger: #ff0000;
-  --background: #f8fafc;
-  --card: #fff;
-  --muted: #8593a3;
+  --dash-bg-1: #f8fafc;
+  --dash-bg-2: #ffe4e6;
+  --dash-bg-3: #fff1f2;
+  --dash-card: rgba(255, 255, 255, 0.9);
+  --dash-text: #0f172a;
+  --dash-muted: #64748b;
+  --dash-border: rgba(148, 163, 184, 0.25);
+  --dash-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --dash-accent: #ef4444;
+  --dash-success: #16a34a;
+  --dash-danger: #dc2626;
 }
 
-/* ================= DASHBOARD ONLY ================= */
 .dashboard-page {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  min-height: 100vh;
-  background: #fff;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  padding: 1.5rem 1.5rem 2rem;
+  background:
+    radial-gradient(900px 400px at 95% -5%, var(--dash-bg-2), transparent 60%),
+    radial-gradient(700px 380px at 5% 115%, var(--dash-bg-3), transparent 55%),
+    linear-gradient(160deg, #ffffff 0%, var(--dash-bg-1) 80%);
+  color: var(--dash-text);
+  overflow-y: auto;
 }
 
 .dashboard-page .dash-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
   gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.dashboard-page .dash-header-copy {
+  display: block;
 }
 
 .dashboard-page .date-range {
-  background: var(--primary);
-  color: #fff;
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
+  padding: 0.45rem 0.92rem;
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.34);
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .dashboard-page .dash-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: minmax(210px, 1fr) minmax(210px, 1fr) minmax(280px, 1.2fr);
+  grid-template-areas:
+    "delivered cancelled violation"
+    "growth growth violation"
+    "month year violation"
+    "rider rider violation";
+  grid-auto-rows: minmax(110px, auto);
   gap: 1rem;
-}
-
-.dashboard-page .dash-grid.two-rows {
-  grid-template-rows: auto auto;
+  align-items: stretch;
 }
 
 .dashboard-page .dash-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 1.2rem 1rem;
-  border-radius: 18px;
-  background: var(--card);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-  transition: transform 0.14s, box-shadow 0.15s;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-card);
+  border-radius: 20px;
+  box-shadow: var(--dash-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 1rem;
   min-height: 120px;
-  color: #000;
-}
-
-.dashboard-page .dash-card .card-label {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #000;
-  margin-bottom: 0.3rem;
-}
-
-.dashboard-page .dash-card .card-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-  color: #000;
-}
-
-.dashboard-page .dash-card .card-desc {
-  font-size: 0.9rem;
-  color: #000;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, border-color 0.18s ease;
 }
 
 .dashboard-page .dash-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 22px 45px rgba(15, 23, 42, 0.12);
+  border-color: rgba(239, 68, 68, 0.26);
 }
 
-.dashboard-page .top-card {
-  min-height: 150px;
+.dashboard-page .delivered-card {
+  grid-area: delivered;
 }
 
-.dashboard-page .bottom-card {
-  min-height: 140px;
-}
-
-.dashboard-page .bottom-card.small-card {
-  min-height: 140px;
-}
-
-.dashboard-page .card-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.6rem;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-}
-
-.dashboard-page .card-icon.success {
-  background: #eafaf3;
-  color: var(--success);
-}
-
-.dashboard-page .card-icon.warning {
-  background: #ffeaea;
-  color: var(--danger);
-}
-
-.dashboard-page .quota-progress {
-  display: grid;
-  place-items: center;
-  position: relative;
-  margin-bottom: 0.5rem;
-}
-
-.dashboard-page .quota-ring {
-  width: 60px;
-  height: 60px;
-}
-
-.dashboard-page .quota-ring-bg {
-  stroke: #eee;
-  stroke-width: 8;
-  fill: none;
-}
-
-.dashboard-page .quota-ring-fg {
-  stroke: var(--primary);
-  stroke-width: 8;
-  fill: none;
-  stroke-linecap: round;
-  transition: stroke-dasharray 0.8s;
-}
-
-.dashboard-page .quota-ring-label {
-  position: absolute;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #000;
-}
-
-.dashboard-page .modern-riders-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.4rem 0 0;
-}
-
-.dashboard-page .modern-riders-list li {
-  padding: 0.5rem 0.8rem;
-  margin-bottom: 0.3rem;
-  background: #ffeaea;
-  color: var(--danger);
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
+.dashboard-page .cancelled-card {
+  grid-area: cancelled;
 }
 
 .dashboard-page .growth {
-  min-height: 180px;
+  grid-area: growth;
 }
 
-@media (max-width: 1200px) {
+.dashboard-page .top-month {
+  grid-area: month;
+}
+
+.dashboard-page .top-year {
+  grid-area: year;
+}
+
+.dashboard-page .top-rider-card {
+  grid-area: rider;
+}
+
+.dashboard-page .violation-map-card {
+  grid-area: violation;
+}
+
+.dashboard-page .metric-card,
+.dashboard-page .small-card,
+.dashboard-page .top-rider-card,
+.dashboard-page .violation-map-card {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.dashboard-page .card-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--dash-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dashboard-page .card-value {
+  font-size: clamp(1.5rem, 2.3vw, 2rem);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--dash-text);
+}
+
+.dashboard-page .card-desc {
+  font-size: 0.86rem;
+  color: var(--dash-muted);
+}
+
+.dashboard-page .metric-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.7rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-page .metric-pill.success {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+}
+
+.dashboard-page .metric-pill.warning {
+  background: rgba(220, 38, 38, 0.12);
+  color: #991b1b;
+}
+
+.dashboard-page .growth {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-height: 280px;
+}
+
+.dashboard-page .violation-map-card {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  padding: 0;
+}
+
+.dashboard-page .growth-canvas-shell {
+  height: 220px;
+  min-height: 220px;
+}
+
+.dashboard-page .growth-canvas-shell canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.dashboard-page .violation-map-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.dashboard-page .violation-map-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+}
+
+.dashboard-page .violation-map-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-page .violation-map-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.dashboard-page .violation-map-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.dashboard-page .violation-map-size-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7f1d1d;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.dashboard-page .violation-map-size-btn:hover {
+  background: #fee2e2;
+}
+
+.dashboard-page .violation-map-body {
+  padding: 14px;
+  min-height: 0;
+  display: flex;
+}
+
+.dashboard-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+
+.dashboard-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+}
+
+.violation-full-map-modal {
+  width: min(1320px, 98vw);
+  max-width: 98vw;
+  height: 92vh;
+  max-height: 92vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.violation-full-map-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+}
+
+.violation-full-map-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.violation-full-map-close {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #7f1d1d;
+  background: #ffffff;
+}
+
+.violation-full-map-body {
+  min-height: 0;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.violation-full-map-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  overflow: hidden;
+}
+
+@media (max-width: 1180px) {
   .dashboard-page .dash-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    grid-template-areas:
+      "delivered cancelled"
+      "growth growth"
+      "month year"
+      "rider rider"
+      "violation violation";
+    grid-auto-rows: minmax(110px, auto);
   }
+
+  .dashboard-page .violation-map-canvas { min-height: 420px; }
 }
 
-@media (max-width: 992px) {
-  .dashboard-page .dash-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 840px) {
   .dashboard-page {
     padding: 1rem;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .dashboard-page .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-page .date-range {
+    width: fit-content;
   }
 
   .dashboard-page .dash-grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "delivered"
+      "cancelled"
+      "growth"
+      "month"
+      "year"
+      "rider"
+      "violation";
+    grid-template-rows: auto;
+    flex: initial;
+  }
+
+  .dashboard-page .growth { min-height: 250px; }
+
+  .dashboard-page .growth-canvas-shell {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .dashboard-page .violation-map-canvas { min-height: 280px; }
+
+  .dashboard-page .violation-map-header-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .violation-full-map-modal {
+    width: 98vw;
+    height: 88vh;
+    max-height: 88vh;
   }
 }
 
-/* ================= DARK MODE (Dashboard only) ================= */
 body.dark .dashboard-page {
   background: var(--dm-bg);
 }
 
-body.dark .dashboard-page .dash-card {
-  background: var(--dm-surface);
-  box-shadow: var(--dm-shadow);
-}
-
-body.dark .dashboard-page .dash-card .card-label,
-body.dark .dashboard-page .dash-card .card-value,
-body.dark .dashboard-page .dash-card .card-desc,
-body.dark .dashboard-page .quota-ring-label {
+body.dark .dashboard-page .page-title {
   color: var(--dm-text);
 }
 
-body.dark .dashboard-page .quota-ring-bg {
-  stroke: var(--dm-border);
+body.dark .dashboard-page .dash-card {
+  background: var(--dm-surface);
+  border-color: var(--dm-border);
+  box-shadow: var(--dm-shadow);
 }
 
-body.dark .dashboard-page .modern-riders-list li {
-  background: rgba(255, 0, 0, 0.16);
-  color: #fecaca;
+body.dark .dashboard-page .card-label,
+body.dark .dashboard-page .card-desc {
+  color: var(--dm-muted);
+}
+
+body.dark .dashboard-page .card-value {
+  color: var(--dm-text);
+}
+
+body.dark .dashboard-page .date-range {
+  color: var(--dm-text);
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+}
+
+body.dark .dashboard-page .metric-pill.success {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.18);
+}
+
+body.dark .dashboard-page .metric-pill.warning {
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.2);
+}
+
+body.dark .dashboard-page .violation-map-canvas {
+  border-color: var(--dm-border);
+  background: var(--dm-surface-2);
+}
+
+body.dark .dashboard-page .violation-map-size-btn,
+body.dark .violation-full-map-close {
+  color: #e2e8f0;
+  background: #334155;
+}
+
+body.dark .violation-full-map-body {
+  background: var(--dm-bg);
+}
+
+body.dark .violation-full-map-canvas {
+  border-color: var(--dm-border);
 }

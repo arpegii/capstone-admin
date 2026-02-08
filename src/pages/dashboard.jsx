@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/sidebar";
 import { supabaseClient } from "../App";
 import Chart from "chart.js/auto";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import "../styles/global.css";
 import "../styles/dashboard.css";
 import PageSpinner from "../components/PageSpinner";
@@ -10,7 +12,6 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     delivered: "--",
     cancelled: "--",
-    dailyQuota: 0,
     topMonth: "--",
     topMonthCount: "--",
     topYear: "--",
@@ -22,8 +23,17 @@ const Dashboard = () => {
     yearGrowth: [],
   });
   const [loading, setLoading] = useState(true);
+  const [violationMapModalOpen, setViolationMapModalOpen] = useState(false);
   const growthChartRef = useRef(null);
   const chartInstanceRef = useRef(null);
+  const violationMapRef = useRef(null);
+  const violationLeafletMapRef = useRef(null);
+  const violationFullMapRef = useRef(null);
+  const violationFullLeafletMapRef = useRef(null);
+  const todayLabel = new Date().toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   useEffect(() => {
     async function loadAnalytics() {
@@ -43,8 +53,6 @@ const Dashboard = () => {
           (p) => p.status?.toLowerCase() === "successfully delivered"
         ).length;
         const cancelled = parcels.filter((p) => p.status?.toLowerCase() === "cancelled").length;
-        const dailyQuota = Math.min(Math.round((delivered / 150) * 100), 100);
-
         const months = {};
         const yearsCount = {};
         const riderCounts = {};
@@ -89,7 +97,6 @@ const Dashboard = () => {
         setDashboardData({
           delivered,
           cancelled,
-          dailyQuota,
           topMonth,
           topMonthCount,
           topYear,
@@ -121,20 +128,104 @@ const Dashboard = () => {
         datasets: [
           {
             data: dashboardData.yearGrowth,
-            borderColor: "#e11d48",
-            backgroundColor: "rgba(225,29,72,0.1)",
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239, 68, 68, 0.16)",
             fill: true,
-            tension: 0.4,
+            tension: 0.35,
+            pointRadius: 2.6,
+            pointHoverRadius: 4,
+            pointBackgroundColor: "#ef4444",
           },
         ],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
-        scales: { x: { grid: { display: false } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: "rgba(148, 163, 184, 0.2)",
+            },
+            ticks: {
+              precision: 0,
+            },
+          },
+        },
       },
     });
   }, [dashboardData.years, dashboardData.yearGrowth]);
+
+  useEffect(() => {
+    if (loading || !violationMapRef.current) return;
+
+    if (!violationLeafletMapRef.current) {
+      const map = L.map(violationMapRef.current).setView([14.676, 121.0437], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+      // Placeholder hotspots until violation coordinates are available in DB.
+      const hotspotStyle = {
+        color: "#dc2626",
+        fillColor: "#ef4444",
+        fillOpacity: 0.25,
+        weight: 1,
+      };
+      L.circle([14.6785, 121.041], { ...hotspotStyle, radius: 260 }).addTo(map).bindPopup("Violation hotspot placeholder");
+      L.circle([14.6715, 121.0485], { ...hotspotStyle, radius: 180 }).addTo(map).bindPopup("Violation hotspot placeholder");
+
+      violationLeafletMapRef.current = map;
+    }
+
+    setTimeout(() => {
+      violationLeafletMapRef.current?.invalidateSize();
+    }, 120);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!violationMapModalOpen) {
+      if (violationFullLeafletMapRef.current) {
+        violationFullLeafletMapRef.current.remove();
+        violationFullLeafletMapRef.current = null;
+      }
+      return;
+    }
+
+    if (!violationFullMapRef.current) return;
+
+    if (!violationFullLeafletMapRef.current) {
+      const map = L.map(violationFullMapRef.current).setView([14.676, 121.0437], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+      const hotspotStyle = {
+        color: "#dc2626",
+        fillColor: "#ef4444",
+        fillOpacity: 0.25,
+        weight: 1,
+      };
+      L.circle([14.6785, 121.041], { ...hotspotStyle, radius: 260 }).addTo(map).bindPopup("Violation hotspot placeholder");
+      L.circle([14.6715, 121.0485], { ...hotspotStyle, radius: 180 }).addTo(map).bindPopup("Violation hotspot placeholder");
+      violationFullLeafletMapRef.current = map;
+    }
+
+    setTimeout(() => {
+      violationFullLeafletMapRef.current?.invalidateSize();
+    }, 120);
+  }, [violationMapModalOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (violationLeafletMapRef.current) {
+        violationLeafletMapRef.current.remove();
+        violationLeafletMapRef.current = null;
+      }
+      if (violationFullLeafletMapRef.current) {
+        violationFullLeafletMapRef.current.remove();
+        violationFullLeafletMapRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="dashboard-container">
@@ -146,53 +237,30 @@ const Dashboard = () => {
         ) : (
           <>
             <div className="dash-header">
-              <h1 className="page-title">Dashboard</h1>
-              <span className="date-range">November 2025</span>
+              <div className="dash-header-copy">
+                <h1 className="page-title">Dashboard</h1>
+              </div>
+              <span className="date-range">{todayLabel}</span>
             </div>
 
             <div className="dash-grid two-rows">
-              <div className="dash-card top-card">
-                <div className="card-icon success" aria-hidden="true">OK</div>
-                <div className="card-label">Delivered</div>
+              <div className="dash-card top-card metric-card delivered-card">
+                <div className="metric-pill success">Delivered</div>
                 <div className="card-value delivered">{dashboardData.delivered}</div>
+                <div className="card-desc">Successful deliveries completed</div>
               </div>
 
-              <div className="dash-card top-card">
-                <div className="card-icon warning" aria-hidden="true">NO</div>
-                <div className="card-label">Cancelled</div>
+              <div className="dash-card top-card metric-card cancelled-card">
+                <div className="metric-pill warning">Cancelled</div>
                 <div className="card-value delayed">{dashboardData.cancelled}</div>
-              </div>
-
-              <div className="dash-card top-card quota">
-                <div className="quota-progress">
-                  <svg viewBox="0 0 120 120" className="quota-ring">
-                    <circle className="quota-ring-bg" cx="60" cy="60" r="48" />
-                    <circle
-                      className="quota-ring-fg"
-                      cx="60"
-                      cy="60"
-                      r="48"
-                      strokeDasharray={`${dashboardData.dailyQuota * 3} 302`}
-                    />
-                  </svg>
-                  <span className="quota-ring-label">{dashboardData.dailyQuota}%</span>
-                </div>
-                <div className="card-label">Daily Quota</div>
-                <div className="card-desc">of 150 parcels</div>
-              </div>
-
-              <div className="dash-card top-card riders-card">
-                <div className="card-label">Top Riders</div>
-                <ul className="modern-riders-list">
-                  {dashboardData.riders.map((r, i) => (
-                    <li key={i}>{r.username}</li>
-                  ))}
-                </ul>
+                <div className="card-desc">Orders cancelled by customer/system</div>
               </div>
 
               <div className="dash-card bottom-card growth">
-                <div className="card-label">Delivery Growth</div>
-                <canvas ref={growthChartRef}></canvas>
+                <div className="card-label">Delivery Growth by Year</div>
+                <div className="growth-canvas-shell">
+                  <canvas ref={growthChartRef}></canvas>
+                </div>
               </div>
 
               <div className="dash-card bottom-card small-card top-month">
@@ -207,18 +275,52 @@ const Dashboard = () => {
                 <div className="card-desc">{dashboardData.topYearCount} deliveries</div>
               </div>
 
-              <div className="dash-card bottom-card small-card top-rider">
+              <div className="dash-card bottom-card top-rider-card">
                 <div className="card-label">Top Rider</div>
-                <div className="card-value">{dashboardData.topRider}</div>
+                <div className="card-value">{dashboardData.topRider || "--"}</div>
                 <div className="card-desc">{dashboardData.topRiderCount} deliveries</div>
+              </div>
+
+              <div className="dash-card bottom-card violation-map-card">
+                <div className="violation-map-header">
+                  <div className="violation-map-header-top">
+                    <h2>Violation Heat Map</h2>
+                    <button
+                      type="button"
+                      className="violation-map-size-btn"
+                      onClick={() => setViolationMapModalOpen(true)}
+                    >
+                      View Fullscreen Map
+                    </button>
+                  </div>
+                  <p>Showing hotspot placeholders where rider violations can appear.</p>
+                </div>
+                <div className="violation-map-body">
+                  <div ref={violationMapRef} className="violation-map-canvas" />
+                </div>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {violationMapModalOpen && (
+        <div className="dashboard-modal-overlay" onClick={() => setViolationMapModalOpen(false)}>
+          <div className="dashboard-modal-content violation-full-map-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="violation-full-map-header">
+              <h2>Violation Heat Map</h2>
+              <button type="button" className="violation-full-map-close" onClick={() => setViolationMapModalOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="violation-full-map-body">
+              <div ref={violationFullMapRef} className="violation-full-map-canvas" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Dashboard;
-

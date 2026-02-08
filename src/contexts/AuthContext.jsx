@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabaseClient } from "../App";
 
 const AuthContext = createContext({});
+const OTP_VERIFIED_KEY = "adminOtpVerified";
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,17 +15,30 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpVerified, setOtpVerifiedState] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
+
+  const setOtpVerified = (value) => {
+    setOtpVerifiedState(value);
+    if (value) {
+      sessionStorage.setItem(OTP_VERIFIED_KEY, "true");
+    } else {
+      sessionStorage.removeItem(OTP_VERIFIED_KEY);
+    }
+  };
 
   useEffect(() => {
     // Restore session on refresh
     supabaseClient.auth.getSession().then(({ data }) => {
       if (data?.session) {
         setUser(data.session.user);
-        setOtpVerified(true);
+        setOtpVerifiedState(sessionStorage.getItem(OTP_VERIFIED_KEY) === "true");
+      } else {
+        setUser(null);
+        setOtpVerifiedState(false);
+        sessionStorage.removeItem(OTP_VERIFIED_KEY);
       }
       setLoading(false);
     });
@@ -35,11 +49,12 @@ export const AuthProvider = ({ children }) => {
     } = supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") {
         setUser(session?.user ?? null);
-        setOtpVerified(true);
+        setOtpVerifiedState(sessionStorage.getItem(OTP_VERIFIED_KEY) === "true");
       }
       if (event === "SIGNED_OUT") {
         setUser(null);
-        setOtpVerified(false);
+        setOtpVerifiedState(false);
+        sessionStorage.removeItem(OTP_VERIFIED_KEY);
       }
     });
 

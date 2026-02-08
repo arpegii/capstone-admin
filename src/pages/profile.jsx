@@ -161,6 +161,14 @@ export default function Profile() {
     }
   }, [authUser, findAdminProfileRow, resolveProfilePictureUrl]);
 
+  useEffect(() => {
+    if (!showSuccessModal) return undefined;
+    const timerId = setTimeout(() => {
+      setShowSuccessModal(false);
+    }, 2200);
+    return () => clearTimeout(timerId);
+  }, [showSuccessModal]);
+
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || (!authUser?.id && !authUser?.email)) return;
@@ -477,13 +485,6 @@ export default function Profile() {
                 <span className="profile-success-checkmark" />
               </div>
               <p>{successMessage}</p>
-              <button
-                type="button"
-                className="profile-success-btn"
-                onClick={() => setShowSuccessModal(false)}
-              >
-                OK
-              </button>
             </div>
           </div>
         </div>

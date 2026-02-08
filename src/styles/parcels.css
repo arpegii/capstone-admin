@@ -88,20 +88,21 @@
 /* ================= TABLE ================= */
 
 .parcels-table-wrapper {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 
-              0 10px 15px rgba(0, 0, 0, 0.03);
-  overflow: visible;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
   animation: parcelsSlideUp 0.6s ease-out 0.1s both;
-  margin-bottom: 40px; /* Add space at bottom for pagination */
+  margin-bottom: 40px;
 }
 
 .parcel-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  table-layout: fixed;
 }
 
 .parcel-table thead {
@@ -110,52 +111,60 @@
 }
 
 .parcel-table thead tr th {
-  padding: 18px 16px;
-  text-align: left;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: transparent;
+  padding: 14px 14px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  font-size: 12px;
-  border: none;
-  white-space: nowrap;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .parcel-table thead tr th:first-child {
-  padding-left: 24px;
-  border-top-left-radius: 16px;
+  padding-left: 18px;
+  border-top-left-radius: 18px;
 }
 
 .parcel-table thead tr th:last-child {
-  padding-right: 24px;
-  border-top-right-radius: 16px;
+  padding-right: 18px;
+  border-top-right-radius: 18px;
 }
 
 .parcel-table tbody tr {
-  border-bottom: 1px solid #f1f5f9;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .parcel-table tbody tr:hover {
-  background: #fef2f2;
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.08);
+  background: #fff6f6;
+  box-shadow: inset 3px 0 0 #ef4444;
 }
 
 .parcel-table tbody tr:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .parcel-table tbody td {
-  padding: 16px;
+  padding: 14px 14px;
   color: #475569;
-  font-size: 14px;
+  font-size: 13px;
   vertical-align: middle;
+  border-bottom: 1px solid #eef2f7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .parcel-table tbody td:first-child {
-  padding-left: 24px;
+  padding-left: 18px;
   font-weight: 700;
   color: #1e293b;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .parcel-table tbody td:nth-child(2) {
@@ -165,35 +174,38 @@
 
 /* Status badges */
 .parcel-table tbody td.delivered {
-  color: #059669;
-  font-weight: 600;
+  color: #047857;
+  font-weight: 700;
   text-transform: capitalize;
+  font-size: 12px;
 }
 
 .parcel-table tbody td.ongoing {
-  color: #ea580c;
-  font-weight: 600;
+  color: #b45309;
+  font-weight: 700;
   text-transform: capitalize;
+  font-size: 12px;
 }
 
 .parcel-table tbody td.cancelled {
-  color: #ff0000;
-  font-weight: 600;
+  color: #b91c1c;
+  font-weight: 700;
   text-transform: capitalize;
+  font-size: 12px;
 }
 
 /* View button */
 .parcel-table .btn-view {
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  background: #dc2626;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 8px 20px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(255, 0, 0, 0.2);
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -210,9 +222,9 @@
 }
 
 .parcel-table .btn-view:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(255, 0, 0, 0.35);
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 14px rgba(220, 38, 38, 0.33);
+  background: #b91c1c;
 }
 
 .parcel-table .btn-view:hover::after {
@@ -226,11 +238,11 @@
 /* ================= TABLE FOOTER & PAGINATION ================= */
 
 .parcels-table-footer {
-  padding: 20px 24px;
-  background: #fafafa;
-  border-top: 1px solid #f1f5f9;
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -243,23 +255,23 @@
 }
 
 .parcels-pagination button {
-  background: white;
+  background: #ffffff;
   color: #475569;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .parcels-pagination button:hover:not(:disabled) {
-  background: #ff0000;
+  background: #dc2626;
   color: white;
-  border-color: #ff0000;
+  border-color: #dc2626;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
+  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.22);
 }
 
 .parcels-pagination button:active:not(:disabled) {
@@ -274,9 +286,9 @@
 }
 
 .parcels-pagination span {
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
   min-width: 120px;
   text-align: center;
 }
@@ -566,6 +578,7 @@ body.dark .parcels-page .page-title {
 body.dark .parcels-filter-section,
 body.dark .parcels-table-wrapper {
   background: var(--dm-surface);
+  border-color: var(--dm-border);
   box-shadow: var(--dm-shadow);
 }
 
@@ -586,7 +599,7 @@ body.dark .parcels-filter-section input[type="text"]::placeholder {
 }
 
 body.dark .parcels-table-footer {
-  background: var(--dm-bg);
+  background: var(--dm-surface-2);
   border-top-color: var(--dm-border);
 }
 
@@ -595,8 +608,8 @@ body.dark .parcel-table tbody tr {
 }
 
 body.dark .parcel-table tbody tr:hover {
-  background: #2b3a52;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.5);
+  background: #1f2937;
+  box-shadow: inset 3px 0 0 #f87171;
 }
 
 body.dark .parcel-table tbody td {
@@ -609,7 +622,7 @@ body.dark .parcel-table tbody td:nth-child(2) {
 }
 
 body.dark .parcels-pagination button {
-  background: var(--dm-surface);
+  background: var(--dm-surface-2);
   color: var(--dm-text);
   border-color: var(--dm-border);
 }

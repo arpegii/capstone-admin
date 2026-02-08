@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import Sidebar from "../components/sidebar";
 import { supabaseClient } from "../App"; // ✅ Import from App.jsx instead of creating new client
 import L from "leaflet";
@@ -6,6 +6,15 @@ import "leaflet/dist/leaflet.css";
 import "../styles/riders.css";
 import "../styles/global.css";
 import PageSpinner from "../components/PageSpinner";
+
+const OPENWEATHER_API_KEY = "792874a9880224b30b884c44090d0f05";
+const RIDER_DELIVERY_QUOTA = 150;
+
+const normalizeCoordinate = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
 
 export default function Riders() {
   const [riders, setRiders] = useState([]);
@@ -17,6 +26,7 @@ export default function Riders() {
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [infoError, setInfoError] = useState("");
   const [selectedRiderInfo, setSelectedRiderInfo] = useState(null);
+  const [performanceModalOpen, setPerformanceModalOpen] = useState(false);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createUsername, setCreateUsername] = useState("");
@@ -26,6 +36,40 @@ export default function Riders() {
   const [createRiderError, setCreateRiderError] = useState("");
   const [showCreateSuccessModal, setShowCreateSuccessModal] = useState(false);
   const [createSuccessMessage, setCreateSuccessMessage] = useState("");
+  const [activeMapLayer, setActiveMapLayer] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+  const [weatherCurrent, setWeatherCurrent] = useState(null);
+  const [weatherForecast, setWeatherForecast] = useState([]);
+  const [showWeatherPanel, setShowWeatherPanel] = useState(false);
+  const [fullWeatherLoading, setFullWeatherLoading] = useState(false);
+  const [fullWeatherError, setFullWeatherError] = useState("");
+  const [fullWeatherCurrent, setFullWeatherCurrent] = useState(null);
+  const [fullWeatherForecast, setFullWeatherForecast] = useState([]);
+  const [showFullWeatherPanel, setShowFullWeatherPanel] = useState(false);
+  const [fullMapModalOpen, setFullMapModalOpen] = useState(false);
+
+  const normalizedCreateUsername = createUsername.trim();
+  const usernameLengthValid = normalizedCreateUsername.length >= 3;
+  const usernamePatternValid = /^[A-Za-z0-9_]+$/.test(normalizedCreateUsername);
+  const isUsernameValid = usernameLengthValid && usernamePatternValid;
+
+  const passwordLengthValid = createPassword.length >= 8;
+  const passwordUpperValid = /[A-Z]/.test(createPassword);
+  const passwordLowerValid = /[a-z]/.test(createPassword);
+  const passwordNumberValid = /[0-9]/.test(createPassword);
+  const passwordSpecialValid = /[^A-Za-z0-9]/.test(createPassword);
+  const isPasswordValid =
+    passwordLengthValid &&
+    passwordUpperValid &&
+    passwordLowerValid &&
+    passwordNumberValid &&
+    passwordSpecialValid;
+  const deliveredForQuota = Number(selectedRiderInfo?.deliveredParcels);
+  const quotaPercent = Number.isFinite(deliveredForQuota)
+    ? Math.min(Math.round((deliveredForQuota / RIDER_DELIVERY_QUOTA) * 100), 100)
+    : 0;
+  const quotaStrokeDasharray = `${quotaPercent * 3.02} 302`;
   const joinDateToday = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -40,42 +84,235 @@ export default function Riders() {
   const allMapRef = useRef(null);
   const allLeafletMapRef = useRef(null);
   const allMarkersRef = useRef([]);
+  const weatherOverlayRef = useRef(null);
+  const floodOverlayRef = useRef(null);
+  const fullMapRef = useRef(null);
+  const fullLeafletMapRef = useRef(null);
+  const fullMarkersRef = useRef([]);
+  const fullWeatherOverlayRef = useRef(null);
+  const fullFloodOverlayRef = useRef(null);
+  const popupHandlerMapRef = useRef(new Map());
+  const hasAutoCenteredAllMapRef = useRef(false);
+  const hasAutoCenteredFullMapRef = useRef(false);
 
-  const getRiderPosition = (name, index = 0) => {
-    const seed = (name || "")
-      .split("")
-      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0) + index * 37;
-    const latOffset = ((seed % 140) - 70) * 0.00028;
-    const lngOffset = (((seed * 3) % 140) - 70) * 0.00028;
+  const fetchRiderLocations = useCallback(async () => {
+    const { data, error } = await supabaseClient
+      .from("users")
+      .select("username, last_seen_lat, last_seen_lng");
 
-    return {
-      lat: 14.676 + latOffset,
-      lng: 121.0437 + lngOffset,
-    };
+    if (error) {
+      throw error;
+    }
+
+    return (data || []).map((rider) => ({
+      ...rider,
+      lat: normalizeCoordinate(rider.last_seen_lat),
+      lng: normalizeCoordinate(rider.last_seen_lng),
+    }));
+  }, []);
+
+  const escapeHtml = (value = "") =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const buildLocationPopup = (riderName) => {
+    const safeName = escapeHtml(riderName || "");
+    return `
+      <div class="rider-location-popup" data-rider-name="${safeName}">
+        <div class="rider-location-popup-head">
+          <span class="rider-location-dot" aria-hidden="true"></span>
+          <span class="rider-location-popup-label">Rider location</span>
+        </div>
+        <button type="button" class="rider-location-popup-btn" data-rider-name="${safeName}">${safeName}</button>
+        <span class="rider-location-popup-hint">Tap name to view rider details</span>
+      </div>
+    `;
+  };
+
+  const bindRiderPopupClick = (marker, riderName) => {
+    marker.on("popupopen", (event) => {
+      const popupElement = event.popup?.getElement();
+      if (!popupElement) return;
+
+      const button = popupElement.querySelector(".rider-location-popup-btn");
+      if (!button) return;
+
+      const clickHandler = () => {
+        openInfoModal(riderName);
+      };
+
+      const popupId = event.popup?._leaflet_id;
+      if (!popupId) {
+        button.addEventListener("click", clickHandler);
+        return;
+      }
+
+      const previousHandler = popupHandlerMapRef.current.get(popupId);
+      if (previousHandler) {
+        button.removeEventListener("click", previousHandler);
+      }
+
+      button.addEventListener("click", clickHandler);
+      popupHandlerMapRef.current.set(popupId, clickHandler);
+    });
+
+    marker.on("popupclose", (event) => {
+      const popupId = event.popup?._leaflet_id;
+      if (!popupId) return;
+      popupHandlerMapRef.current.delete(popupId);
+    });
+  };
+
+  const fetchWeatherForLocation = async (lat, lon) => {
+    if (!OPENWEATHER_API_KEY) return;
+
+    setWeatherLoading(true);
+    setWeatherError("");
+
+    try {
+      const [currentRes, forecastRes] = await Promise.all([
+        fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+        ),
+        fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+        ),
+      ]);
+
+      if (!currentRes.ok || !forecastRes.ok) {
+        throw new Error("Failed to load weather information.");
+      }
+
+      const current = await currentRes.json();
+      const forecast = await forecastRes.json();
+
+      setWeatherCurrent({
+        temp: Math.round(current?.main?.temp ?? 0),
+        feelsLike: Math.round(current?.main?.feels_like ?? 0),
+        humidity: current?.main?.humidity ?? "-",
+        wind: current?.wind?.speed ?? "-",
+        city: current?.name || "Map Area",
+        description: current?.weather?.[0]?.description || "No description",
+        icon: current?.weather?.[0]?.icon || null,
+      });
+
+      const nextForecast = (forecast?.list || []).slice(0, 4).map((item) => ({
+        time: new Date(item.dt * 1000).toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+        temp: Math.round(item?.main?.temp ?? 0),
+        icon: item?.weather?.[0]?.icon || null,
+      }));
+      setWeatherForecast(nextForecast);
+    } catch (error) {
+      console.error("Failed to fetch weather data:", error);
+      setWeatherError("Unable to load weather data.");
+      setWeatherCurrent(null);
+      setWeatherForecast([]);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const fetchFullWeatherForLocation = async (lat, lon) => {
+    if (!OPENWEATHER_API_KEY) return;
+
+    setFullWeatherLoading(true);
+    setFullWeatherError("");
+
+    try {
+      const [currentRes, forecastRes] = await Promise.all([
+        fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+        ),
+        fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+        ),
+      ]);
+
+      if (!currentRes.ok || !forecastRes.ok) {
+        throw new Error("Failed to load weather information.");
+      }
+
+      const current = await currentRes.json();
+      const forecast = await forecastRes.json();
+
+      setFullWeatherCurrent({
+        temp: Math.round(current?.main?.temp ?? 0),
+        feelsLike: Math.round(current?.main?.feels_like ?? 0),
+        humidity: current?.main?.humidity ?? "-",
+        wind: current?.wind?.speed ?? "-",
+        city: current?.name || "Map Area",
+        description: current?.weather?.[0]?.description || "No description",
+        icon: current?.weather?.[0]?.icon || null,
+      });
+
+      const nextForecast = (forecast?.list || []).slice(0, 4).map((item) => ({
+        time: new Date(item.dt * 1000).toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+        temp: Math.round(item?.main?.temp ?? 0),
+        icon: item?.weather?.[0]?.icon || null,
+      }));
+      setFullWeatherForecast(nextForecast);
+    } catch (error) {
+      console.error("Failed to fetch fullscreen weather data:", error);
+      setFullWeatherError("Unable to load weather data.");
+      setFullWeatherCurrent(null);
+      setFullWeatherForecast([]);
+    } finally {
+      setFullWeatherLoading(false);
+    }
   };
 
   const riderLocations = useMemo(
-    () =>
-      riders.map((rider, idx) => ({
-        ...rider,
-        ...getRiderPosition(rider.username, idx),
-      })),
+    () => riders.filter((rider) => rider.lat !== null && rider.lng !== null),
     [riders]
   );
 
   // Load riders on mount
   useEffect(() => {
+    let isMounted = true;
+
     async function loadRiders() {
       try {
-        const { data, error } = await supabaseClient.from("users").select("username");
-        if (error) return console.error(error);
-        setRiders(data || []);
+        const ridersData = await fetchRiderLocations();
+        if (isMounted) {
+          setRiders(ridersData);
+        }
+      } catch (error) {
+        console.error("Failed to load rider locations:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
+
     loadRiders();
-  }, []);
+
+    const pollingInterval = setInterval(async () => {
+      try {
+        const ridersData = await fetchRiderLocations();
+        if (isMounted) {
+          setRiders(ridersData);
+        }
+      } catch (error) {
+        console.error("Failed to refresh rider locations:", error);
+      }
+    }, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollingInterval);
+    };
+  }, [fetchRiderLocations]);
 
   useEffect(() => {
     if (loading || !allMapRef.current) return;
@@ -97,30 +334,264 @@ export default function Riders() {
     allMarkersRef.current = [];
 
     riderLocations.forEach((rider) => {
-      const marker = L.marker([rider.lat, rider.lng], { icon: riderIcon })
+      const marker = L.marker([rider.lat, rider.lng], {
+        icon: riderIcon,
+        zIndexOffset: 1200,
+        riseOnHover: true,
+      })
         .addTo(map)
-        .bindPopup(`${rider.username}'s location`);
+        .bindPopup(buildLocationPopup(rider.username), {
+          className: "rider-location-leaflet-popup",
+          closeButton: false,
+        });
+      bindRiderPopupClick(marker, rider.username);
       allMarkersRef.current.push(marker);
     });
 
-    if (allMarkersRef.current.length > 1) {
+    if (!hasAutoCenteredAllMapRef.current && allMarkersRef.current.length > 1) {
       const bounds = L.featureGroup(allMarkersRef.current).getBounds().pad(0.2);
       map.fitBounds(bounds);
-    } else if (allMarkersRef.current.length === 1) {
+      hasAutoCenteredAllMapRef.current = true;
+    } else if (!hasAutoCenteredAllMapRef.current && allMarkersRef.current.length === 1) {
       const first = allMarkersRef.current[0].getLatLng();
       map.setView([first.lat, first.lng], 14);
+      hasAutoCenteredAllMapRef.current = true;
     }
 
     setTimeout(() => {
       map.invalidateSize();
     }, 120);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, riderLocations]);
 
   useEffect(() => {
+    if (!fullMapModalOpen) {
+      if (fullWeatherOverlayRef.current && fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.removeLayer(fullWeatherOverlayRef.current);
+        fullWeatherOverlayRef.current = null;
+      }
+      if (fullFloodOverlayRef.current && fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.removeLayer(fullFloodOverlayRef.current);
+        fullFloodOverlayRef.current = null;
+      }
+      if (fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.remove();
+        fullLeafletMapRef.current = null;
+      }
+      fullMarkersRef.current = [];
+      hasAutoCenteredFullMapRef.current = false;
+      return;
+    }
+
+    if (!fullMapRef.current) return;
+
+    if (!fullLeafletMapRef.current) {
+      fullLeafletMapRef.current = L.map(fullMapRef.current).setView([14.676, 121.0437], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(
+        fullLeafletMapRef.current
+      );
+    }
+
+    const map = fullLeafletMapRef.current;
+    const riderIcon = L.icon({
+      iconUrl: "/images/rider.png",
+      iconSize: [42, 42],
+      iconAnchor: [21, 42],
+      popupAnchor: [0, -42],
+    });
+
+    fullMarkersRef.current.forEach((marker) => map.removeLayer(marker));
+    fullMarkersRef.current = [];
+
+    riderLocations.forEach((rider) => {
+      const marker = L.marker([rider.lat, rider.lng], {
+        icon: riderIcon,
+        zIndexOffset: 1300,
+        riseOnHover: true,
+      })
+        .addTo(map)
+        .bindPopup(buildLocationPopup(rider.username), {
+          className: "rider-location-leaflet-popup",
+          closeButton: false,
+        });
+      bindRiderPopupClick(marker, rider.username);
+      fullMarkersRef.current.push(marker);
+    });
+
+    if (!hasAutoCenteredFullMapRef.current && fullMarkersRef.current.length > 1) {
+      const bounds = L.featureGroup(fullMarkersRef.current).getBounds().pad(0.2);
+      map.fitBounds(bounds);
+      hasAutoCenteredFullMapRef.current = true;
+    } else if (!hasAutoCenteredFullMapRef.current && fullMarkersRef.current.length === 1) {
+      const first = fullMarkersRef.current[0].getLatLng();
+      map.setView([first.lat, first.lng], 14);
+      hasAutoCenteredFullMapRef.current = true;
+    }
+
+    if (fullWeatherOverlayRef.current) {
+      map.removeLayer(fullWeatherOverlayRef.current);
+      fullWeatherOverlayRef.current = null;
+    }
+    if (fullFloodOverlayRef.current) {
+      map.removeLayer(fullFloodOverlayRef.current);
+      fullFloodOverlayRef.current = null;
+    }
+
+    if (activeMapLayer === "weather") {
+      fullWeatherOverlayRef.current = L.tileLayer(
+        `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`,
+        {
+          maxZoom: 19,
+          opacity: 0.9,
+        }
+      );
+      fullWeatherOverlayRef.current.on("tileerror", (event) => {
+        console.error("OpenWeather tile failed to load (fullscreen map):", event);
+      });
+      fullWeatherOverlayRef.current.addTo(map);
+    } else if (activeMapLayer === "flood") {
+      fullFloodOverlayRef.current = L.tileLayer(
+        `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`,
+        {
+          maxZoom: 19,
+          opacity: 0.9,
+        }
+      );
+      fullFloodOverlayRef.current.on("tileerror", (event) => {
+        console.error("Flood tile failed to load (fullscreen map):", event);
+      });
+      fullFloodOverlayRef.current.addTo(map);
+    }
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 120);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullMapModalOpen, riderLocations, activeMapLayer]);
+
+  useEffect(() => {
+    if (!trackModalOpen || !trackingRider || !currentMarkerRef.current || !leafletMapRef.current) return;
+
+    const selectedRider = riderLocations.find((rider) => rider.username === trackingRider);
+    if (!selectedRider) return;
+
+    const nextPosition = [selectedRider.lat, selectedRider.lng];
+    currentMarkerRef.current.setLatLng(nextPosition);
+  }, [trackModalOpen, trackingRider, riderLocations]);
+
+  useEffect(() => {
+    const map = allLeafletMapRef.current;
+    if (!map) return;
+
+    if (weatherOverlayRef.current) {
+      map.removeLayer(weatherOverlayRef.current);
+      weatherOverlayRef.current = null;
+    }
+    if (floodOverlayRef.current) {
+      map.removeLayer(floodOverlayRef.current);
+      floodOverlayRef.current = null;
+    }
+
+    if (activeMapLayer === "weather") {
+      weatherOverlayRef.current = L.tileLayer(
+        `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`,
+        {
+          maxZoom: 19,
+          opacity: 0.9,
+        }
+      );
+      weatherOverlayRef.current.on("tileerror", (event) => {
+        console.error("OpenWeather tile failed to load:", event);
+      });
+      weatherOverlayRef.current.addTo(map);
+      weatherOverlayRef.current.bringToFront();
+    } else if (activeMapLayer === "flood") {
+      floodOverlayRef.current = L.tileLayer(
+        `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`,
+        {
+          maxZoom: 19,
+          opacity: 0.9,
+        }
+      );
+      floodOverlayRef.current.on("tileerror", (event) => {
+        console.error("Flood tile failed to load:", event);
+      });
+      floodOverlayRef.current.addTo(map);
+      floodOverlayRef.current.bringToFront();
+    }
+  }, [activeMapLayer, loading, riderLocations.length]);
+
+  useEffect(() => {
+    const map = allLeafletMapRef.current;
+    if (!map || activeMapLayer !== "weather") {
+      setWeatherCurrent(null);
+      setWeatherForecast([]);
+      setWeatherError("");
+      setWeatherLoading(false);
+      return;
+    }
+
+    const requestWeather = () => {
+      const center = map.getCenter();
+      fetchWeatherForLocation(center.lat, center.lng);
+    };
+
+    requestWeather();
+    map.on("moveend", requestWeather);
+
     return () => {
+      map.off("moveend", requestWeather);
+    };
+  }, [activeMapLayer, loading, riderLocations.length]);
+
+  useEffect(() => {
+    const map = fullLeafletMapRef.current;
+    if (!fullMapModalOpen || !map || activeMapLayer !== "weather") {
+      setFullWeatherCurrent(null);
+      setFullWeatherForecast([]);
+      setFullWeatherError("");
+      setFullWeatherLoading(false);
+      return;
+    }
+
+    const requestWeather = () => {
+      const center = map.getCenter();
+      fetchFullWeatherForLocation(center.lat, center.lng);
+    };
+
+    requestWeather();
+    map.on("moveend", requestWeather);
+
+    return () => {
+      map.off("moveend", requestWeather);
+    };
+  }, [activeMapLayer, fullMapModalOpen, riderLocations.length]);
+
+  useEffect(() => {
+    return () => {
+      if (weatherOverlayRef.current && allLeafletMapRef.current) {
+        allLeafletMapRef.current.removeLayer(weatherOverlayRef.current);
+        weatherOverlayRef.current = null;
+      }
+      if (floodOverlayRef.current && allLeafletMapRef.current) {
+        allLeafletMapRef.current.removeLayer(floodOverlayRef.current);
+        floodOverlayRef.current = null;
+      }
+      if (fullWeatherOverlayRef.current && fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.removeLayer(fullWeatherOverlayRef.current);
+        fullWeatherOverlayRef.current = null;
+      }
+      if (fullFloodOverlayRef.current && fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.removeLayer(fullFloodOverlayRef.current);
+        fullFloodOverlayRef.current = null;
+      }
       if (allLeafletMapRef.current) {
         allLeafletMapRef.current.remove();
         allLeafletMapRef.current = null;
+      }
+      if (fullLeafletMapRef.current) {
+        fullLeafletMapRef.current.remove();
+        fullLeafletMapRef.current = null;
       }
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
@@ -163,11 +634,15 @@ export default function Riders() {
 
       const marker = L.marker(
         [focusedLat, focusedLng],
-        { icon: riderIcon }
+        { icon: riderIcon, zIndexOffset: 1200, riseOnHover: true }
       )
         .addTo(map)
-        .bindPopup(`${riderName}'s location`)
+        .bindPopup(buildLocationPopup(riderName), {
+          className: "rider-location-leaflet-popup",
+          closeButton: false,
+        })
         .openPopup();
+      bindRiderPopupClick(marker, riderName);
 
       leafletMapRef.current = map;
       currentMarkerRef.current = marker;
@@ -213,7 +688,13 @@ export default function Riders() {
         return;
       }
 
-      setSelectedRiderInfo(data);
+      setSelectedRiderInfo({
+        ...data,
+        deliveredParcels: "--",
+        ongoingParcels: "--",
+        cancelledParcels: "--",
+        quotaTarget: RIDER_DELIVERY_QUOTA,
+      });
     } catch (err) {
       console.error("Failed to fetch rider information:", err);
       setInfoError("Failed to load rider information.");
@@ -224,6 +705,7 @@ export default function Riders() {
 
   const closeInfoModal = () => {
     setInfoModalOpen(false);
+    setPerformanceModalOpen(false);
     setSelectedRiderInfo(null);
     setInfoError("");
     setPhotoPreviewOpen(false);
@@ -251,9 +733,13 @@ export default function Riders() {
     setCreateRiderError("");
     setCreateSuccessMessage("");
 
-    const normalizedUsername = createUsername.trim();
+    const normalizedUsername = normalizedCreateUsername;
     if (!normalizedUsername) {
       setCreateRiderError("Username is required.");
+      return;
+    }
+    if (!isUsernameValid) {
+      setCreateRiderError("Username must be at least 3 characters and use letters, numbers, or underscore only.");
       return;
     }
 
@@ -263,8 +749,10 @@ export default function Riders() {
       return;
     }
 
-    if (createPassword.length < 6) {
-      setCreateRiderError("Password must be at least 6 characters.");
+    if (!isPasswordValid) {
+      setCreateRiderError(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+      );
       return;
     }
 
@@ -302,8 +790,8 @@ export default function Riders() {
         }
       }
 
-      const { data: ridersData, error: ridersError } = await supabaseClient.from("users").select("username");
-      if (!ridersError && ridersData) {
+      const ridersData = await fetchRiderLocations();
+      if (ridersData) {
         setRiders(ridersData);
       }
 
@@ -382,17 +870,235 @@ export default function Riders() {
               </div>
               <div className="rider-map-card">
                 <div className="rider-map-header">
-                  <h2>Live Rider Map</h2>
+                  <div className="rider-map-header-top">
+                    <h2>Live Rider Map</h2>
+                    <div className="rider-weather-toggle">
+                      <div className="rider-layer-toggle-row">
+                        <span>Weather</span>
+                        <label className="rider-toggle-switch" aria-label="Toggle weather layer">
+                          <input
+                            type="checkbox"
+                            checked={activeMapLayer === "weather"}
+                            onChange={(event) => {
+                              if (event.target.checked) {
+                                setActiveMapLayer("weather");
+                                setShowWeatherPanel(false);
+                                setShowFullWeatherPanel(false);
+                              } else {
+                                setActiveMapLayer(null);
+                                setShowWeatherPanel(false);
+                                setShowFullWeatherPanel(false);
+                              }
+                            }}
+                          />
+                          <span className="rider-toggle-slider" />
+                        </label>
+                      </div>
+                      <div className="rider-layer-toggle-row">
+                        <span>Flood</span>
+                        <label className="rider-toggle-switch" aria-label="Toggle flood layer">
+                          <input
+                            type="checkbox"
+                            checked={activeMapLayer === "flood"}
+                            onChange={(event) => {
+                              if (event.target.checked) {
+                                setActiveMapLayer("flood");
+                              } else {
+                                setActiveMapLayer(null);
+                              }
+                              setShowWeatherPanel(false);
+                              setShowFullWeatherPanel(false);
+                            }}
+                          />
+                          <span className="rider-toggle-slider" />
+                        </label>
+                      </div>
+                      <button type="button" className="rider-map-size-btn" onClick={() => setFullMapModalOpen(true)}>
+                        Open Fullscreen Map
+                      </button>
+                    </div>
+                  </div>
                   <p>Showing all rider positions on the page map.</p>
                 </div>
                 <div className="rider-map-body">
-                  <div ref={allMapRef} className="rider-live-map" />
+                  <div className="rider-map-stack">
+                    <div ref={allMapRef} className="rider-live-map" />
+                    {activeMapLayer === "weather" && (
+                      <button
+                        type="button"
+                        className={`weather-panel-toggle-btn ${showWeatherPanel ? "open" : ""}`}
+                        onClick={() => setShowWeatherPanel((prev) => !prev)}
+                        aria-label={showWeatherPanel ? "Hide weather panel" : "Show weather panel"}
+                      >
+                        <span aria-hidden="true">☁</span>
+                      </button>
+                    )}
+                    {activeMapLayer === "weather" && showWeatherPanel && (
+                      <div className="weather-forecast-card">
+                        {weatherLoading ? (
+                          <p className="weather-forecast-loading">Loading weather...</p>
+                        ) : weatherError ? (
+                          <p className="weather-forecast-error">{weatherError}</p>
+                        ) : weatherCurrent ? (
+                          <>
+                            <div className="weather-now">
+                              <div className="weather-now-main">
+                                <strong>{weatherCurrent.city}</strong>
+                                <span className="weather-desc">{weatherCurrent.description}</span>
+                              </div>
+                              <div className="weather-temp-block">
+                                {weatherCurrent.icon && (
+                                  <img
+                                    src={`https://openweathermap.org/img/wn/${weatherCurrent.icon}@2x.png`}
+                                    alt={weatherCurrent.description}
+                                  />
+                                )}
+                                <span>{weatherCurrent.temp}°C</span>
+                              </div>
+                            </div>
+                            <div className="weather-metrics">
+                              <span>Feels {weatherCurrent.feelsLike}°C</span>
+                              <span>Humidity {weatherCurrent.humidity}%</span>
+                              <span>Wind {weatherCurrent.wind} m/s</span>
+                            </div>
+                            <div className="weather-forecast-row">
+                              {weatherForecast.map((item) => (
+                                <div key={`${item.time}-${item.temp}`} className="weather-forecast-chip">
+                                  <span>{item.time}</span>
+                                  {item.icon && (
+                                    <img
+                                      src={`https://openweathermap.org/img/wn/${item.icon}.png`}
+                                      alt="forecast icon"
+                                    />
+                                  )}
+                                  <strong>{item.temp}°</strong>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="weather-forecast-loading">Weather data unavailable.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {fullMapModalOpen && (
+        <div className="riders-modal-overlay" onClick={() => setFullMapModalOpen(false)}>
+          <div className="riders-modal-content rider-full-map-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="riders-modal-header rider-full-map-header">
+              <h2>Live Rider Map</h2>
+              <div className="rider-full-map-controls">
+                <div className="rider-layer-toggle-row">
+                  <span>Weather</span>
+                  <label className="rider-toggle-switch" aria-label="Toggle weather layer (fullscreen)">
+                    <input
+                      type="checkbox"
+                      checked={activeMapLayer === "weather"}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setActiveMapLayer("weather");
+                        } else {
+                          setActiveMapLayer(null);
+                        }
+                        setShowFullWeatherPanel(false);
+                      }}
+                    />
+                    <span className="rider-toggle-slider" />
+                  </label>
+                </div>
+                <div className="rider-layer-toggle-row">
+                  <span>Flood</span>
+                  <label className="rider-toggle-switch" aria-label="Toggle flood layer (fullscreen)">
+                    <input
+                      type="checkbox"
+                      checked={activeMapLayer === "flood"}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setActiveMapLayer("flood");
+                        } else {
+                          setActiveMapLayer(null);
+                        }
+                        setShowFullWeatherPanel(false);
+                      }}
+                    />
+                    <span className="rider-toggle-slider" />
+                  </label>
+                </div>
+              </div>
+              <button type="button" className="rider-full-map-close" onClick={() => setFullMapModalOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="rider-full-map-body">
+              <div className="rider-map-stack rider-full-map-stack">
+                <div ref={fullMapRef} className="rider-full-map-canvas" />
+                {activeMapLayer === "weather" && (
+                  <button
+                    type="button"
+                    className={`weather-panel-toggle-btn ${showFullWeatherPanel ? "open" : ""}`}
+                    onClick={() => setShowFullWeatherPanel((prev) => !prev)}
+                    aria-label={showFullWeatherPanel ? "Hide weather panel" : "Show weather panel"}
+                  >
+                    <span aria-hidden="true">☁</span>
+                  </button>
+                )}
+                {activeMapLayer === "weather" && showFullWeatherPanel && (
+                  <div className="weather-forecast-card">
+                    {fullWeatherLoading ? (
+                      <p className="weather-forecast-loading">Loading weather...</p>
+                    ) : fullWeatherError ? (
+                      <p className="weather-forecast-error">{fullWeatherError}</p>
+                    ) : fullWeatherCurrent ? (
+                      <>
+                        <div className="weather-now">
+                          <div className="weather-now-main">
+                            <strong>{fullWeatherCurrent.city}</strong>
+                            <span className="weather-desc">{fullWeatherCurrent.description}</span>
+                          </div>
+                          <div className="weather-temp-block">
+                            {fullWeatherCurrent.icon && (
+                              <img
+                                src={`https://openweathermap.org/img/wn/${fullWeatherCurrent.icon}@2x.png`}
+                                alt={fullWeatherCurrent.description}
+                              />
+                            )}
+                            <span>{fullWeatherCurrent.temp}°C</span>
+                          </div>
+                        </div>
+                        <div className="weather-metrics">
+                          <span>Feels {fullWeatherCurrent.feelsLike}°C</span>
+                          <span>Humidity {fullWeatherCurrent.humidity}%</span>
+                          <span>Wind {fullWeatherCurrent.wind} m/s</span>
+                        </div>
+                        <div className="weather-forecast-row">
+                          {fullWeatherForecast.map((item) => (
+                            <div key={`${item.time}-${item.temp}`} className="weather-forecast-chip">
+                              <span>{item.time}</span>
+                              {item.icon && (
+                                <img src={`https://openweathermap.org/img/wn/${item.icon}.png`} alt="forecast icon" />
+                              )}
+                              <strong>{item.temp}°</strong>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="weather-forecast-loading">Weather data unavailable.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {trackModalOpen && (
         <div
@@ -403,7 +1109,7 @@ export default function Riders() {
           <div
             className="riders-modal-content track-rider-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 700, maxWidth: "90%" }}
+            style={{ width: 920, maxWidth: "96%" }}
           >
             <div className="riders-modal-header">
               <h2>Track Rider</h2>
@@ -413,11 +1119,13 @@ export default function Riders() {
                 Tracking the location of: <strong>{trackingRider}</strong>
               </p>
               {loadingMap && (
-                <img 
-                  src="/images/motor.gif" 
-                  alt="Loading map..." 
-                  style={{ width: 120, margin: "20px auto", display: "block" }} 
-                />
+                <div className="track-rider-loading">
+                  <img
+                    src="/images/motor.gif"
+                    alt="Loading map..."
+                    style={{ width: 120, display: "block" }}
+                  />
+                </div>
               )}
               <div
                 ref={mapRef}
@@ -452,40 +1160,124 @@ export default function Riders() {
               ) : infoError ? (
                 <p className="rider-info-error">{infoError}</p>
               ) : (
-                <>
-                  <div className="rider-info-profile">
-                    {selectedRiderInfo?.profile_url ? (
-                      <button
-                        type="button"
-                        className="rider-avatar-btn"
-                        onClick={() => setPhotoPreviewOpen(true)}
-                        aria-label="View profile picture"
-                      >
-                        <img
-                          src={selectedRiderInfo.profile_url}
-                          alt={`${selectedRiderInfo?.username || "Rider"} profile`}
-                          className="rider-info-avatar"
-                        />
-                      </button>
-                    ) : (
-                      <div className="rider-info-avatar rider-info-avatar-fallback">
-                        {(selectedRiderInfo?.fname?.[0] || selectedRiderInfo?.username?.[0] || "R").toUpperCase()}
+                <div className="rider-info-shell">
+                  <div className="rider-info-hero">
+                    <div className="rider-info-profile">
+                      {selectedRiderInfo?.profile_url ? (
+                        <button
+                          type="button"
+                          className="rider-avatar-btn"
+                          onClick={() => setPhotoPreviewOpen(true)}
+                          aria-label="View profile picture"
+                        >
+                          <img
+                            src={selectedRiderInfo.profile_url}
+                            alt={`${selectedRiderInfo?.username || "Rider"} profile`}
+                            className="rider-info-avatar"
+                          />
+                        </button>
+                      ) : (
+                        <div className="rider-info-avatar rider-info-avatar-fallback">
+                          {(selectedRiderInfo?.fname?.[0] || selectedRiderInfo?.username?.[0] || "R").toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="rider-info-main">
+                      <div className="rider-info-headline">
+                        <h3>{selectedRiderInfo?.username || "Rider"}</h3>
+                        <p>
+                          {[selectedRiderInfo?.fname, selectedRiderInfo?.mname, selectedRiderInfo?.lname]
+                            .filter(Boolean)
+                            .join(" ") || "No full name available"}
+                        </p>
+                        <div className="rider-status-row">
+                          <span
+                            className={`rider-status-pill ${
+                              selectedRiderInfo?.status?.toLowerCase() === "active" ? "is-active" : "is-default"
+                            }`}
+                          >
+                            {selectedRiderInfo?.status || "Unknown"}
+                          </span>
+                          <button
+                            type="button"
+                            className="rider-performance-btn"
+                            onClick={() => setPerformanceModalOpen(true)}
+                          >
+                            Performance
+                          </button>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   <div className="rider-info-grid">
                     <div className="rider-info-item"><span>Email</span><strong>{selectedRiderInfo?.email || "-"}</strong></div>
+                    <div className="rider-info-item"><span>Phone Number</span><strong>{selectedRiderInfo?.pnumber || "-"}</strong></div>
                     <div className="rider-info-item"><span>First Name</span><strong>{selectedRiderInfo?.fname || "-"}</strong></div>
-                    <div className="rider-info-item"><span>Last Name</span><strong>{selectedRiderInfo?.lname || "-"}</strong></div>
                     <div className="rider-info-item"><span>Middle Name</span><strong>{selectedRiderInfo?.mname || "-"}</strong></div>
+                    <div className="rider-info-item"><span>Last Name</span><strong>{selectedRiderInfo?.lname || "-"}</strong></div>
                     <div className="rider-info-item"><span>Gender</span><strong>{selectedRiderInfo?.gender || "-"}</strong></div>
                     <div className="rider-info-item"><span>Age</span><strong>{selectedRiderInfo?.age ?? "-"}</strong></div>
                     <div className="rider-info-item"><span>Status</span><strong>{selectedRiderInfo?.status || "-"}</strong></div>
-                    <div className="rider-info-item"><span>Phone Number</span><strong>{selectedRiderInfo?.pnumber || "-"}</strong></div>
                   </div>
-                </>
+                  {selectedRiderInfo?.profile_url && (
+                    <p className="rider-info-photo-hint">Tip: Click the profile photo to view it larger.</p>
+                  )}
+                  </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {performanceModalOpen && selectedRiderInfo && (
+        <div
+          className="riders-modal-overlay"
+          onClick={() => setPerformanceModalOpen(false)}
+          style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+        >
+          <div
+            className="riders-modal-content rider-performance-modal"
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: 620, maxWidth: "92%" }}
+          >
+            <div className="riders-modal-header">
+              <h2>{selectedRiderInfo.username || "Rider"} Performance</h2>
+            </div>
+            <div className="riders-modal-body rider-performance-body">
+              <div className="rider-performance-grid">
+                <div className="rider-performance-card rider-performance-quota">
+                  <span>Quota Progress</span>
+                  <div className="rider-performance-ring-wrap">
+                    <svg viewBox="0 0 120 120" className="rider-performance-ring">
+                      <circle className="rider-performance-ring-bg" cx="60" cy="60" r="48" />
+                      <circle
+                        className="rider-performance-ring-fg"
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        strokeDasharray={quotaStrokeDasharray}
+                      />
+                    </svg>
+                    <strong className="rider-performance-ring-label">{quotaPercent}%</strong>
+                  </div>
+                  <small className="rider-performance-ring-note">
+                    {selectedRiderInfo.deliveredParcels ?? "--"}/{selectedRiderInfo.quotaTarget ?? RIDER_DELIVERY_QUOTA} delivered
+                  </small>
+                </div>
+                <div className="rider-performance-card">
+                  <span>Delivered Parcels</span>
+                  <strong>{selectedRiderInfo.deliveredParcels ?? 0}</strong>
+                </div>
+                <div className="rider-performance-card">
+                  <span>Ongoing Parcels</span>
+                  <strong>{selectedRiderInfo.ongoingParcels ?? 0}</strong>
+                </div>
+                <div className="rider-performance-card">
+                  <span>Cancelled Parcels</span>
+                  <strong>{selectedRiderInfo.cancelledParcels ?? 0}</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -504,13 +1296,6 @@ export default function Riders() {
           >
             <div className="riders-modal-header">
               <h2>Profile Picture</h2>
-              <button
-                className="riders-modal-close-btn"
-                onClick={() => setPhotoPreviewOpen(false)}
-                aria-label="Close preview"
-              >
-                &times;
-              </button>
             </div>
             <div className="riders-modal-body rider-photo-body">
               <img
@@ -562,6 +1347,19 @@ export default function Riders() {
                     autoComplete="username"
                     disabled={creatingRider}
                   />
+                  <div className="rider-rules-box" aria-live="polite">
+                    <p className="rider-rules-title">Username requirements</p>
+                    <div className="rider-create-rules">
+                      <label className={`rider-rule-item ${usernameLengthValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={usernameLengthValid} readOnly tabIndex={-1} />
+                        <span>At least 3 characters</span>
+                      </label>
+                      <label className={`rider-rule-item ${usernamePatternValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={usernamePatternValid} readOnly tabIndex={-1} />
+                        <span>Letters, numbers, underscore only</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="rider-create-field">
@@ -585,12 +1383,37 @@ export default function Riders() {
                     type="password"
                     value={createPassword}
                     onChange={(event) => setCreatePassword(event.target.value)}
-                    placeholder="At least 6 characters"
-                    minLength={6}
+                    placeholder="Strong password"
+                    minLength={8}
                     required
                     autoComplete="new-password"
                     disabled={creatingRider}
                   />
+                  <div className="rider-rules-box" aria-live="polite">
+                    <p className="rider-rules-title">Password requirements</p>
+                    <div className="rider-create-rules">
+                      <label className={`rider-rule-item ${passwordLengthValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={passwordLengthValid} readOnly tabIndex={-1} />
+                        <span>At least 8 characters</span>
+                      </label>
+                      <label className={`rider-rule-item ${passwordUpperValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={passwordUpperValid} readOnly tabIndex={-1} />
+                        <span>Has uppercase letter</span>
+                      </label>
+                      <label className={`rider-rule-item ${passwordLowerValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={passwordLowerValid} readOnly tabIndex={-1} />
+                        <span>Has lowercase letter</span>
+                      </label>
+                      <label className={`rider-rule-item ${passwordNumberValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={passwordNumberValid} readOnly tabIndex={-1} />
+                        <span>Has number</span>
+                      </label>
+                      <label className={`rider-rule-item ${passwordSpecialValid ? "met" : ""}`}>
+                        <input type="checkbox" checked={passwordSpecialValid} readOnly tabIndex={-1} />
+                        <span>Has special character</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 {createRiderError && <p className="rider-create-error">{createRiderError}</p>}
@@ -604,7 +1427,7 @@ export default function Riders() {
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="rider-create-submit" disabled={creatingRider}>
+                  <button type="submit" className="rider-create-submit" disabled={creatingRider || !isUsernameValid || !isPasswordValid}>
                     {creatingRider ? "Creating..." : "Create Account"}
                   </button>
                 </div>

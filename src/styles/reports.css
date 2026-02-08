@@ -1,36 +1,32 @@
-/* ================= REPORTS PAGE - MODERN DESIGN ================= */
-
+/* ================= REPORTS PAGE ================= */
 .reports-page {
   flex: 1;
-  background: #ffffff;
-  overflow: visible !important;
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  height: auto !important;
   min-height: 100vh;
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 32px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(860px 340px at 92% 0%, rgba(255, 0, 0, 0.1), transparent 60%),
+    radial-gradient(640px 300px at 8% 100%, rgba(128, 0, 0, 0.08), transparent 60%),
+    #ffffff;
+  overflow-y: auto;
 }
 
-/* ================= REPORT CARD ================= */
-
+/* ================= CARD ================= */
 .reports-card.reports-card-modern {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.04);
+  width: min(920px, 100%);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
   overflow: hidden;
-  max-width: 800px;
-  width: 100%;
-  animation: reportsSlideUp 0.6s ease-out;
+  animation: reportsSlideUp 0.45s ease-out;
 }
 
 @keyframes reportsSlideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(22px);
   }
   to {
     opacity: 1;
@@ -38,212 +34,150 @@
   }
 }
 
-/* ================= REPORT HEADER ================= */
-
+/* ================= HEADER ================= */
 .reports-header {
   background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
-  padding: 32px 40px;
+  color: #ffffff;
+  padding: 28px 32px;
   text-align: center;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
 }
 
 .reports-header h1 {
   margin: 0;
-  font-size: 32px;
-  font-weight: 700;
-  color: white;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
   letter-spacing: -0.5px;
-  text-align: center;
 }
 
 .reports-header .reports-page-title::before {
   background: linear-gradient(180deg, #ffffff 0%, #fecaca 100%);
 }
 
-/* ================= REPORT FORM ================= */
-
+/* ================= FORM ================= */
 .reports-form {
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  padding: 28px 32px 30px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 18px;
 }
 
-.reports-form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.reports-form-row,
+.reports-form-row.full {
   width: 100%;
+  display: grid;
+  gap: 8px;
 }
 
 .reports-form-row.full {
-  width: 100%;
-}
-
-/* Create two-column grid for date fields and column/format fields */
-.reports-form {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  padding: 40px;
-}
-
-/* Make Report Type full width */
-.reports-form > .reports-form-row:nth-child(1) {
   grid-column: 1 / -1;
 }
 
-/* Two columns for Start/End Date */
-.reports-form > .reports-form-row:nth-child(2) {
-  grid-column: 1;
-}
-
-.reports-form > .reports-form-row:nth-child(3) {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-/* Two columns for Column/Format */
-.reports-form > .reports-form-row:nth-child(4) {
-  grid-column: 1;
-}
-
-.reports-form > .reports-form-row:nth-child(5) {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-/* Form buttons span full width */
 .reports-form-buttons {
   grid-column: 1 / -1;
-}
-
-/* Enable two-column grid on desktop */
-@media (min-width: 769px) {
-  .reports-form {
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    column-gap: 24px;
-  }
-}
-
-.reports-form-row.full {
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
 }
 
 .reports-form-row label {
-  color: #1e293b;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .reports-form-row select,
 .reports-form-row input[type="date"] {
-  padding: 14px 16px;
-  border: 2px solid #e5e7eb;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
   border-radius: 12px;
-  font-size: 15px;
-  color: #1e293b;
+  font-size: 14px;
+  color: #0f172a;
   background: #ffffff;
-  transition: all 0.2s ease;
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   font-family: inherit;
-  cursor: pointer;
-}
-
-/* Ensure date picker icon is visible */
-.reports-form-row input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 1;
-  display: block;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") center/contain no-repeat;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  margin-left: 8px;
-}
-
-.reports-form-row input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 0.7;
-}
-
-.reports-form-row select:hover,
-.reports-form-row input[type="date"]:hover {
-  border-color: #cbd5e1;
-}
-
-.reports-form-row select:focus,
-.reports-form-row input[type="date"]:focus {
-  border-color: #ff0000;
-  box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.1);
 }
 
 .reports-form-row select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  padding-right: 48px;
+  background-position: right 14px center;
+  padding-right: 42px;
 }
 
-/* Two column layout for date fields */
-/* Removed - all fields are full width for better container fit */
-
-/* ================= FORM BUTTONS ================= */
-
-.reports-form-buttons {
-  margin-top: 16px;
-  display: flex;
-  justify-content: center;
+.reports-form-row input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.9;
 }
 
+.reports-form-row select:hover,
+.reports-form-row input[type="date"]:hover {
+  border-color: #94a3b8;
+}
+
+.reports-form-row select:focus,
+.reports-form-row input[type="date"]:focus {
+  border-color: #ff0000;
+  box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.12);
+}
+
+/* ================= BUTTON ================= */
 .reports-btn-generate {
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
-  color: white;
   border: none;
   border-radius: 12px;
-  padding: 16px 48px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
-  letter-spacing: 0.5px;
+  padding: 12px 22px;
+  min-width: 170px;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.reports-btn-generate::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.28);
 }
 
 .reports-btn-generate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
-}
-
-.reports-btn-generate:hover::before {
-  left: 100%;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.35);
 }
 
 .reports-btn-generate:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+}
+
+.reports-btn-generate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.inline-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: reportsSpin 0.7s linear infinite;
+}
+
+@keyframes reportsSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ================= VALIDATION MODAL ================= */
-
 .reports-validation-modal {
   position: fixed;
   top: 0;
@@ -269,13 +203,13 @@
 }
 
 .reports-validation-content {
-  background: white;
+  width: 400px;
+  max-width: 90%;
+  background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3),
               0 0 0 1px rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  width: 400px;
-  max-width: 90%;
   animation: reportsModalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-align: center;
   position: relative;
@@ -293,34 +227,8 @@
   }
 }
 
-.reports-validation-content .close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: #f1f5f9;
-  border: 2px solid #e5e7eb;
-  color: #475569;
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.reports-validation-content .close:hover {
-  background: #e5e7eb;
-  border-color: #cbd5e1;
-  transform: scale(1.05);
-}
-
 .reports-validation-content::before {
-  content: '⚠';
+  content: '\26A0';
   font-size: 56px;
   display: block;
   margin-bottom: 20px;
@@ -328,19 +236,18 @@
 }
 
 .reports-validation-content p {
-  font-size: 18px;
-  color: #1e293b;
   margin: 0 0 24px 0;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .reports-validation-content button {
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
-  color: white;
   border: none;
   border-radius: 10px;
   padding: 12px 32px;
+  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
+  color: #ffffff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -351,144 +258,13 @@
 .reports-validation-content button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
-  background: linear-gradient(135deg, #ff0000 0%, #800000 100%);
 }
 
 .reports-validation-content button:active {
   transform: translateY(0);
 }
 
-/* ================= RESPONSIVE DESIGN ================= */
-
-@media (max-width: 768px) {
-  .reports-page {
-    padding: 24px 16px;
-  }
-
-  .reports-card.reports-card-modern {
-    border-radius: 16px;
-  }
-
-  .reports-header {
-    padding: 24px 20px;
-  }
-
-  .reports-header h1 {
-    font-size: 24px;
-  }
-
-  .reports-form {
-    padding: 28px 24px;
-    gap: 20px;
-  }
-
-  .reports-form-row label {
-    font-size: 13px;
-  }
-
-  /* Single column on mobile */
-  .reports-form {
-    grid-template-columns: 1fr;
-  }
-  
-  .reports-form > .reports-form-row:nth-child(2),
-  .reports-form > .reports-form-row:nth-child(3),
-  .reports-form > .reports-form-row:nth-child(4),
-  .reports-form > .reports-form-row:nth-child(5) {
-    grid-column: 1;
-  }
-  
-  .reports-form > .reports-form-row:nth-child(3) {
-    grid-row: auto;
-  }
-  
-  .reports-form > .reports-form-row:nth-child(5) {
-    grid-row: auto;
-  }
-
-  .reports-form-row select,
-  .reports-form-row input[type="date"] {
-    padding: 12px 14px;
-    font-size: 14px;
-  }
-
-  .reports-btn-generate {
-    padding: 14px 40px;
-    font-size: 15px;
-    width: 100%;
-  }
-
-  .reports-validation-content {
-    padding: 32px 24px;
-  }
-
-  .reports-validation-content p {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .reports-header h1 {
-    font-size: 20px;
-  }
-
-  .reports-form {
-    padding: 24px 20px;
-    gap: 18px;
-  }
-
-  .reports-form-row select,
-  .reports-form-row input[type="date"] {
-    font-size: 16px; /* Prevent zoom on iOS */
-  }
-
-  .reports-validation-content {
-    max-width: 95%;
-  }
-}
-
-/* ================= LOADING STATE ================= */
-
-.reports-btn-generate:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.inline-spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: reportsSpin 0.7s linear infinite;
-  vertical-align: text-bottom;
-}
-
-.reports-btn-generate.loading::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: reportsSpin 0.6s linear infinite;
-}
-
-@keyframes reportsSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ================= FOCUS VISIBLE ================= */
-
+/* ================= ACCESSIBILITY ================= */
 .reports-form-row select:focus-visible,
 .reports-form-row input[type="date"]:focus-visible,
 .reports-btn-generate:focus-visible,
@@ -497,11 +273,34 @@
   outline-offset: 2px;
 }
 
-/* ================= PRINT STYLES ================= */
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+  .reports-page {
+    padding: 18px;
+  }
 
-@media print {
-  .reports-validation-modal {
-    display: none;
+  .reports-form {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+    gap: 14px;
+  }
+
+  .reports-form-buttons {
+    justify-content: stretch;
+  }
+
+  .reports-btn-generate {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .reports-header {
+    padding: 22px 16px;
+  }
+
+  .reports-form {
+    padding: 20px 16px 22px;
   }
 }
 
@@ -512,11 +311,12 @@ body.dark .reports-page {
 
 body.dark .reports-card.reports-card-modern {
   background: var(--dm-surface);
+  border-color: var(--dm-border);
   box-shadow: var(--dm-shadow);
 }
 
 body.dark .reports-form-row label {
-  color: var(--dm-text);
+  color: var(--dm-muted);
 }
 
 body.dark .reports-form-row select,
@@ -535,13 +335,6 @@ body.dark .reports-validation-content {
   background: var(--dm-surface);
 }
 
-body.dark .reports-validation-content .close {
-  background: var(--dm-bg);
-  border-color: var(--dm-border);
-  color: var(--dm-text);
-}
-
 body.dark .reports-validation-content p {
   color: var(--dm-text);
 }
-

@@ -1,25 +1,12 @@
 // components/logoutmodal.jsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabaseClient } from "../App";
 import "../styles/logoutModal.css";
 
 export default function LogoutModal({ isOpen, onCancel, onConfirm }) {
-  console.log("=== LOGOUT MODAL COMPONENT RENDER ===");
-  console.log("isOpen prop:", isOpen);
-  console.log("onCancel:", typeof onCancel);
-  console.log("onConfirm:", typeof onConfirm);
-  
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  useEffect(() => {
-    console.log("LogoutModal useEffect - isOpen changed to:", isOpen);
-    if (!isOpen) {
-      setIsLoggingOut(false);
-    }
-  }, [isOpen]);
-
   const handleLogout = async () => {
-    console.log("handleLogout called");
     setIsLoggingOut(true);
     
     try {
@@ -31,6 +18,8 @@ export default function LogoutModal({ isOpen, onCancel, onConfirm }) {
         setIsLoggingOut(false);
         return;
       }
+
+      setIsLoggingOut(false);
 
       if (onConfirm) {
         onConfirm();
@@ -47,11 +36,8 @@ export default function LogoutModal({ isOpen, onCancel, onConfirm }) {
   };
 
   if (!isOpen) {
-    console.log("LogoutModal: returning null (not showing)");
     return null;
   }
-
-  console.log("LogoutModal: RENDERING MODAL!");
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
