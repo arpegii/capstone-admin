@@ -296,6 +296,16 @@
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
+.rider-location-popup.is-online .rider-location-dot {
+  background: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2);
+}
+
+.rider-location-popup.is-offline .rider-location-dot {
+  background: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+}
+
 .rider-location-popup-btn {
   border: none;
   padding: 0;
@@ -324,6 +334,31 @@
   color: #64748b;
   font-size: 11px;
   font-weight: 600;
+}
+
+.rider-location-status {
+  width: fit-content;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(100, 116, 139, 0.14);
+  color: #334155;
+  border: 1px solid rgba(100, 116, 139, 0.35);
+}
+
+.rider-location-popup.is-online .rider-location-status {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+  border-color: rgba(5, 150, 105, 0.35);
+}
+
+.rider-location-popup.is-offline .rider-location-status {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 .rider-location-leaflet-popup .leaflet-popup-content-wrapper {
@@ -908,10 +943,16 @@
   letter-spacing: 0.4px;
 }
 
-.rider-status-pill.is-active {
+.rider-status-pill.is-online {
   background: rgba(16, 185, 129, 0.16);
   color: #047857;
   border: 1px solid rgba(5, 150, 105, 0.35);
+}
+
+.rider-status-pill.is-offline {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.35);
 }
 
 .rider-status-pill.is-default {
@@ -1658,10 +1699,16 @@ body.dark .rider-info-photo-hint {
   color: var(--dm-muted-2);
 }
 
-body.dark .rider-status-pill.is-active {
+body.dark .rider-status-pill.is-online {
   background: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
   border-color: rgba(52, 211, 153, 0.45);
+}
+
+body.dark .rider-status-pill.is-offline {
+  background: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.45);
 }
 
 body.dark .rider-status-pill.is-default {
@@ -1821,6 +1868,29 @@ body.dark .rider-location-popup-hint {
 body.dark .rider-location-dot {
   background: #f87171;
   box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.2);
+}
+
+body.dark .rider-location-popup.is-online .rider-location-dot {
+  background: #4ade80;
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.2);
+}
+
+body.dark .rider-location-status {
+  background: rgba(100, 116, 139, 0.24);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+body.dark .rider-location-popup.is-online .rider-location-status {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+body.dark .rider-location-popup.is-offline .rider-location-status {
+  background: rgba(220, 38, 38, 0.24);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.45);
 }
 
 body.dark .rider-location-leaflet-popup .leaflet-popup-content-wrapper {

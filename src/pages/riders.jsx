@@ -98,7 +98,7 @@ export default function Riders() {
   const fetchRiderLocations = useCallback(async () => {
     const { data, error } = await supabaseClient
       .from("users")
-      .select("username, last_seen_lat, last_seen_lng");
+      .select("username, status, last_seen_lat, last_seen_lng");
 
     if (error) {
       throw error;
@@ -121,13 +121,19 @@ export default function Riders() {
 
   const buildLocationPopup = (riderName) => {
     const safeName = escapeHtml(riderName || "");
+    const selected = riders.find((r) => r.username === riderName);
+    const normalizedStatus = selected?.status?.toLowerCase() || "";
+    const isOnline = ["online", "active"].includes(normalizedStatus);
+    const statusClass = isOnline ? "is-online" : ["offline", "inactive"].includes(normalizedStatus) ? "is-offline" : "is-default";
+    const statusLabel = selected?.status || "Unknown";
     return `
-      <div class="rider-location-popup" data-rider-name="${safeName}">
+      <div class="rider-location-popup ${statusClass}" data-rider-name="${safeName}">
         <div class="rider-location-popup-head">
           <span class="rider-location-dot" aria-hidden="true"></span>
           <span class="rider-location-popup-label">Rider location</span>
         </div>
         <button type="button" class="rider-location-popup-btn" data-rider-name="${safeName}">${safeName}</button>
+        <span class="rider-location-status">${escapeHtml(statusLabel)}</span>
         <span class="rider-location-popup-hint">Tap name to view rider details</span>
       </div>
     `;
@@ -640,8 +646,7 @@ export default function Riders() {
         .bindPopup(buildLocationPopup(riderName), {
           className: "rider-location-leaflet-popup",
           closeButton: false,
-        })
-        .openPopup();
+        });
       bindRiderPopupClick(marker, riderName);
 
       leafletMapRef.current = map;
@@ -650,6 +655,8 @@ export default function Riders() {
       // Force Leaflet to render correctly
       setTimeout(() => {
         map.invalidateSize();
+        marker.openPopup();
+        marker.getPopup()?.update();
       }, 200);
     }, 500); // wait 500ms for modal animation
   };
@@ -1191,13 +1198,19 @@ export default function Riders() {
                             .join(" ") || "No full name available"}
                         </p>
                         <div className="rider-status-row">
-                          <span
-                            className={`rider-status-pill ${
-                              selectedRiderInfo?.status?.toLowerCase() === "active" ? "is-active" : "is-default"
-                            }`}
-                          >
-                            {selectedRiderInfo?.status || "Unknown"}
-                          </span>
+                          {(() => {
+                            const normalizedStatus = selectedRiderInfo?.status?.toLowerCase() || "";
+                            const statusClass = ["online", "active"].includes(normalizedStatus)
+                              ? "is-online"
+                              : ["offline", "inactive"].includes(normalizedStatus)
+                              ? "is-offline"
+                              : "is-default";
+                            return (
+                              <span className={`rider-status-pill ${statusClass}`}>
+                                {selectedRiderInfo?.status || "Unknown"}
+                              </span>
+                            );
+                          })()}
                           <button
                             type="button"
                             className="rider-performance-btn"
