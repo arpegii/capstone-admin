@@ -8,6 +8,81 @@ import "../styles/global.css";
 import "../styles/dashboard.css";
 import PageSpinner from "../components/PageSpinner";
 
+const VIOLATION_HOTSPOTS = [
+  {
+    location: "Quezon Memorial Circle, Quezon City",
+    incidents: 19,
+    note: "Frequent overspeed alerts during rush hours.",
+    coords: [14.6509, 121.0494],
+    radius: 260,
+  },
+  {
+    location: "Aurora Blvd, Cubao, Quezon City",
+    incidents: 11,
+    note: "Repeated abrupt-stop events near intersections.",
+    coords: [14.6206, 121.0541],
+    radius: 190,
+  },
+  {
+    location: "Commonwealth Ave, Batasan Hills, Quezon City",
+    incidents: 6,
+    note: "Occasional route-deviation reports.",
+    coords: [14.6838, 121.0952],
+    radius: 160,
+  },
+  {
+    location: "Katipunan Ave, Loyola Heights, Quezon City",
+    incidents: 10,
+    note: "Frequent lane-change alerts near school zones.",
+    coords: [14.6381, 121.0743],
+    radius: 175,
+  },
+  {
+    location: "Espana Blvd, Sampaloc, Manila",
+    incidents: 15,
+    note: "Dense rider traffic with repeated speed violations.",
+    coords: [14.6112, 120.9896],
+    radius: 240,
+  },
+  {
+    location: "Ortigas Ave, Pasig City",
+    incidents: 5,
+    note: "Isolated stop-duration anomalies.",
+    coords: [14.5876, 121.0614],
+    radius: 145,
+  },
+];
+
+const HOTSPOT_CIRCLE_STYLE = {
+  high: {
+    color: "#991b1b",
+    fillColor: "#ef4444",
+    fillOpacity: 0.42,
+    weight: 3,
+    opacity: 0.95,
+  },
+  medium: {
+    color: "#92400e",
+    fillColor: "#f59e0b",
+    fillOpacity: 0.38,
+    weight: 2.6,
+    opacity: 0.92,
+  },
+  low: {
+    color: "#166534",
+    fillColor: "#22c55e",
+    fillOpacity: 0.34,
+    weight: 2.4,
+    opacity: 0.9,
+  },
+};
+
+const getViolationDensityLevel = (incidents) => {
+  if (incidents >= 11) return "high";
+  if (incidents >= 6) return "medium";
+  return "low";
+};
+
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     delivered: "--",
@@ -34,6 +109,17 @@ const Dashboard = () => {
     month: "long",
     year: "numeric",
   });
+  const buildViolationPopup = (location, level, incidents, note) => `
+    <div class="violation-hotspot-popup-card">
+      <div class="violation-hotspot-popup-top">
+        <span class="violation-hotspot-dot ${level}"></span>
+        <strong>${location}</strong>
+      </div>
+      <span class="violation-hotspot-badge ${level}">${level.toUpperCase()} DENSITY</span>
+      <p>${incidents} recent incidents (placeholder)</p>
+      <small>${note}</small>
+    </div>
+  `;
 
   useEffect(() => {
     async function loadAnalytics() {
@@ -166,14 +252,20 @@ const Dashboard = () => {
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
       // Placeholder hotspots until violation coordinates are available in DB.
-      const hotspotStyle = {
-        color: "#dc2626",
-        fillColor: "#ef4444",
-        fillOpacity: 0.25,
-        weight: 1,
-      };
-      L.circle([14.6785, 121.041], { ...hotspotStyle, radius: 260 }).addTo(map).bindPopup("Violation hotspot placeholder");
-      L.circle([14.6715, 121.0485], { ...hotspotStyle, radius: 180 }).addTo(map).bindPopup("Violation hotspot placeholder");
+      VIOLATION_HOTSPOTS.forEach((hotspot) => {
+        const level = getViolationDensityLevel(hotspot.incidents);
+        const circleStyle = HOTSPOT_CIRCLE_STYLE[level] || HOTSPOT_CIRCLE_STYLE.high;
+
+        L.circle(hotspot.coords, {
+          ...circleStyle,
+          radius: hotspot.radius,
+        })
+          .addTo(map)
+          .bindPopup(
+            buildViolationPopup(hotspot.location, level, hotspot.incidents, hotspot.note),
+            { className: "violation-hotspot-popup", closeButton: false }
+          );
+      });
 
       violationLeafletMapRef.current = map;
     }
@@ -198,14 +290,20 @@ const Dashboard = () => {
       const map = L.map(violationFullMapRef.current).setView([14.676, 121.0437], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
-      const hotspotStyle = {
-        color: "#dc2626",
-        fillColor: "#ef4444",
-        fillOpacity: 0.25,
-        weight: 1,
-      };
-      L.circle([14.6785, 121.041], { ...hotspotStyle, radius: 260 }).addTo(map).bindPopup("Violation hotspot placeholder");
-      L.circle([14.6715, 121.0485], { ...hotspotStyle, radius: 180 }).addTo(map).bindPopup("Violation hotspot placeholder");
+      VIOLATION_HOTSPOTS.forEach((hotspot) => {
+        const level = getViolationDensityLevel(hotspot.incidents);
+        const circleStyle = HOTSPOT_CIRCLE_STYLE[level] || HOTSPOT_CIRCLE_STYLE.high;
+
+        L.circle(hotspot.coords, {
+          ...circleStyle,
+          radius: hotspot.radius,
+        })
+          .addTo(map)
+          .bindPopup(
+            buildViolationPopup(hotspot.location, level, hotspot.incidents, hotspot.note),
+            { className: "violation-hotspot-popup", closeButton: false }
+          );
+      });
       violationFullLeafletMapRef.current = map;
     }
 
@@ -296,7 +394,18 @@ const Dashboard = () => {
                   <p>Showing hotspot placeholders where rider violations can appear.</p>
                 </div>
                 <div className="violation-map-body">
-                  <div ref={violationMapRef} className="violation-map-canvas" />
+                  <div className="violation-map-stack">
+                    <div ref={violationMapRef} className="violation-map-canvas" />
+                    <div className="violation-map-placeholder-panel">
+                      <strong>Heat Maps Indicator</strong>
+                      <p>Hotspots shown are sample overlays while violation GPS events are not yet available.</p>
+                      <div className="violation-map-legend">
+                        <span><i className="legend-dot high" />High</span>
+                        <span><i className="legend-dot medium" />Medium</span>
+                        <span><i className="legend-dot low" />Low</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -314,7 +423,18 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="violation-full-map-body">
-              <div ref={violationFullMapRef} className="violation-full-map-canvas" />
+              <div className="violation-full-map-stack">
+                <div ref={violationFullMapRef} className="violation-full-map-canvas" />
+                <div className="violation-map-placeholder-panel violation-map-placeholder-panel-full">
+                  <strong>Heat Maps Indicator</strong>
+                  <p>Hotspots shown are sample overlays while violation GPS events are not yet available.</p>
+                  <div className="violation-map-legend">
+                    <span><i className="legend-dot high" />High</span>
+                    <span><i className="legend-dot medium" />Medium</span>
+                    <span><i className="legend-dot low" />Low</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

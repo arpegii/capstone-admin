@@ -3,7 +3,7 @@
 /* Scope styles to settings page only */
 .settings-page {
   flex: 1;
-  background: #ffffff;
+  background: var(--page-bg-soft);
   overflow: visible !important;
   overflow-y: auto !important;
   overflow-x: hidden;

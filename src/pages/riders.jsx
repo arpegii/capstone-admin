@@ -312,7 +312,7 @@ export default function Riders() {
       } catch (error) {
         console.error("Failed to refresh rider locations:", error);
       }
-    }, 10000);
+    }, 5000);
 
     return () => {
       isMounted = false;

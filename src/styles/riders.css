@@ -3,7 +3,7 @@
 .riders-page {
   flex: 1;
   padding: 0;
-  background: #ffffff;
+  background: var(--page-bg-soft);
   overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
@@ -80,7 +80,8 @@
 .rider-map-card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -515,8 +516,8 @@
 .riders-table-wrapper {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 
-              0 10px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
   overflow: auto;
   animation: ridersSlideUp 0.6s ease-out;
   height: 100%;
